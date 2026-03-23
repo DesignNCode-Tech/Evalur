@@ -1,0 +1,48 @@
+# --- System / OS Files ---
+.DS_Store
+Thumbs.db
+*.swp
+*.log
+
+# --- IDE Specific ---
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# --- Node / React (Frontend) ---
+node_modules/
+dist/
+build/
+.eslintcache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# --- Maven / Java (Backend) ---
+target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/wrapper/maven-wrapper.jar
+
+# --- Secrets and Environment ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.p12
+*.pem
+*.jks
+
+# --- Local Infrastructure ---
+bin/
+out/
+temp/
