@@ -1,133 +1,87 @@
 # Evalur
-### Unified Generative Assessment & High-Integrity Proctoring Platform
-
-Evalur is a distributed full-stack ecosystem designed to automate academic content creation and secure the integrity of digital assessments. The platform bridges the gap between raw study materials and actionable pedagogical insights through an AI-driven generative engine and a hardened proctored testing environment.
+## AI Workforce Readiness & Onboarding Platform
+Evalur is a distributed full-stack B2B ecosystem designed to automate technical onboarding and validate engineering readiness. By bridging the gap between proprietary corporate documentation and active code execution, Evalur’s AI-driven RAG engine and secure sandbox simulate real-world developer environments, drastically reducing the time-to-first-commit for new hires.
 
 ---
 
-## 1. Project Vision & Core Concepts
+## 1. Platform Vision & Core Architecture
+Traditional technical assessments test generic syntax memory. Evalur addresses this inefficiency by evaluating how effectively an engineer can navigate, understand, and write code against a company's specific, proprietary internal architecture.
 
-Traditional assessment workflows are often fragmented and manual. Evalur addresses these inefficiencies by providing an end-to-end pipeline from content ingestion to automated grading.
+### I. Proprietary Knowledge Ingestion (RAG Pipeline)
+Engineering managers can upload unstructured internal documentation (PDFs, Markdown) or connect read-only GitHub repositories. The LangChain4j-powered orchestrator parses and vectorizes this data to synthesize highly contextual, company-specific technical challenges, eliminating the need for manual test creation.
 
-### I. AI-Powered Content Creation
-The **Generative Assessment Engine** allows teaching staff to upload unstructured study materials (PDFs, lecture notes, or Markdown files). The engine automatically parses the text to synthesize context-aware multiple-choice questions and technical challenges, significantly reducing administrative overhead.
+### II. Multi-Layered Assessment Engine
+Evalur moves beyond standard testing by implementing a three-tier readiness evaluation:
 
-### II. Secure Testing Environment
-To maintain academic integrity in remote environments, Evalur implements a dual-layered security protocol:
-
-* **Browser Proctoring**: Enforces a secure perimeter via mandatory fullscreen mode, tab-switch detection (triggering automated warnings or session termination), and clipboard inhibition to prevent plagiarism.
-* **Integrated Code Sandbox**: A built-in execution environment for technical evaluations. Submissions are validated in real-time against predefined test cases within an isolated headless environment.
-
-### III. Automated Results & Staff Analytics
-
-* **Instant Evaluation**: Deterministic (MCQ) and programmatic (Code) submissions are graded immediately upon completion.
-* **Pedagogical Insights**: Aggregated data visualizations highlight class-wide knowledge gaps, allowing educators to identify specific topics requiring additional instructional support.
+- **Knowledge Layer:** Deterministic checks (MCQs) verifying comprehension of internal APIs, compliance rules, and architecture specifications. 
+- **Judgment Layer:** Timed, scenario-based debugging questions testing how a developer responds to simulated production issues based on company policy. 
+- **Execution Layer:** Real-world coding tasks requiring the developer to fix or build features using sanitized corporate boilerplate.
+### III. Open-Book Secure Code Sandbox
+To simulate realistic working conditions, Evalur utilizes a split-screen interface. Candidates have access to ingested internal documentation alongside an isolated, headless code execution environment. Submissions are validated in real-time against predefined internal test cases.
 
 ---
 
 ## 2. Technical Stack
-
 ### Frontend (Client)
-
-* **Core**: React 19 (Concurrent Rendering)
-* **Build Tool**: Vite 8
-* **State Management**: TanStack Query v5
-* **Styling**: Tailwind CSS v4 (Lightning CSS engine)
-* **Validation**: Zod (Runtime Schema Validation)
-* **API Client**: Axios
-
-### Backend (Server)
-
-* **Framework**: Java Spring Boot 3.x
-* **Security**: Stateless JWT-based Authentication & RBAC
-* **Persistence**: MySQL 8.x with Spring Data JPA / Hibernate
-* **Environment**: `io.github.cdimascio.dotenv` for secure secret management
-* **Build Tool**: Maven
-
+- **Core:** React 19 (Concurrent Rendering) 
+- **Build Tool:** Vite 8 
+- **State Management:** TanStack Query v5 
+- **Styling:** Tailwind CSS v4 (Lightning CSS Engine) 
+- **Validation:** Zod (Runtime Schema Validation) 
+- **API Client:** Axios
+### Backend (Server & AI Pipeline)
+- **Framework:** Java Spring Boot 3.x 
+- **AI Orchestrator:** LangChain4j (Chunking, Embeddings, LLM Prompting) 
+- **Data Parsing:** LlamaParse (for complex PDF/Table extraction) & Native Markdown Loaders 
+- **Security:** Stateless JWT-based Authentication & RBAC 
+- **Persistence:** PostgreSQL with Spring Data JPA / Hibernate (PinecodeDB for Vector storage integration) 
+- **Environment:** `io.github.cdimascio.dotenv`  for secure secret management 
+- **Build Tool:** Maven
 ---
 
 ## 3. Organizational Structure (RBAC)
-
-The system utilizes a four-tier permission model to ensure institutional scalability:
+The system utilizes a four-tier permission model tailored for B2B enterprise scalability:
 
 | Role | Access Level | Primary Responsibility |
-| :--- | :--- | :--- |
-| **Website Admin** | Global | Infrastructure health, analytics, and institutional onboarding. |
-| **Institution Admin** | Organizational | Management of staff rosters and student cohorts. |
-| **Teaching Staff** | Curriculum | Content ingestion, assessment logic, and grading audits. |
-| **User** | Candidate | Secure participation in assessments and performance tracking. |
-
+| ----- | ----- | ----- |
+| **Platform Admin** | Global | Infrastructure health, analytics, and tenant onboarding |
+| **Corporate Admin** | Organizational | Department management, billing, and global configurations |
+| **Engineering Manager** | Department | Knowledge ingestion, assessment generation, and evaluation |
+| **Candidate / Employee** | User | Participation in assessments and onboarding modules |
 ---
 
-## 4. Engineering & Development Strategy
-
-To maintain high code quality within the **DesignNCode-Tech** organization, the project follows these professional engineering protocols:
-
-### I. Git Workflow & Branching
-
-We utilize a feature-branching strategy to ensure the `main` branch remains deployable at all times:
-
-* **Feature Isolation**: All new logic is developed in dedicated `feature/` branches.
-* **Peer Review**: No code is merged into the `develop` or `main` branches without a formal Pull Request (PR) and approval from at least one other team member.
-* **Commit Standards**: We follow conventional commit messages to maintain a readable project history.
-
-### II. Environment & Configuration Parity
-
-* **Secret Management**: All sensitive data (DB credentials, JWT keys, AI API tokens) are strictly externalized via `.env` files.
-* **Schema Consistency**: We enforce end-to-end type safety. API response structures are mirrored between the Spring Boot service and the React client using TypeScript interfaces and Zod schemas.
-* **Cross-Platform Compatibility**: The project is configured to run consistently across Windows, macOS, and Linux environments.
-
-### III. CI/CD & Static Analysis
-
-* **Frontend**: ESLint and Prettier are enforced to maintain a unified coding style and prevent syntax regressions.
-* **Backend**: Strict Java 17 typing and Maven-based build verification are used to ensure service-layer stability during the integration phase.
-
----
-
-## 5. Local Setup & Installation
-
+## 4. Local Setup & Installation
 ### Prerequisites
-
-* Java JDK 17+
-* Node.js v22+ (LTS)
-* MySQL Server 8.x
-* Maven 3.8+
-
+- Java JDK 17+ 
+- Node.js v22+ (LTS) 
+- PostgreSQL, PineconeDB (Online Instances)
+- Maven 3.8+
 ### Execution Steps
-
-**1. Clone the Repository**
-
+#### 1. Clone the Repository
 ```bash
 git clone https://github.com/DesignNCode-Tech/Evalur.git
+
 cd Evalur
 ```
-
-**2. Backend Initialization**
-
-```bash
+#### 2. Backend Initialization
+```
 cd server/evalur
-# Configure local environment (Refer to .env.example)
+# Configure local environment (Refer to .env.example for DB and AI API keys)
 cp .env.example .env
 mvn clean install
 mvn spring-boot:run
 ```
-
-**3. Frontend Initialization**
-
+#### 3. Frontend Initialization
 ```bash
 cd client
+
 npm install --legacy-peer-deps
 npm run dev
 ```
-
----
-
 ## 👥 Contributors (Team-1)
-
-* **[@dev-shreyash](https://github.com/dev-shreyash)** — Lead Architect & Full-Stack development 
-* **[@pavankumar1908](https://github.com/pavankumar1908)** — Team Lead & Full-Stack development 
-* **[@Namiramulla22](https://github.com/Namiramulla22)** — Full-Stack development 
-
-*Maintained within the DesignNCode-Tech Organization.*
+- **@dev-shreyash** - Lead Architect & Full-Stack development
+- **@pavankumar1908** - Team Lead & Full-Stack development
+- **@Namiramulla22** - Full-Stack development
 
 ---
+
