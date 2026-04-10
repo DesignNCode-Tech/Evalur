@@ -48,7 +48,7 @@ public class SecurityConfig {
                 )
                 // 3. Define Request Rules
                 .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll() // Public routes
+                .requestMatchers("/api/v1/**").permitAll() // Public routes
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Role-specific
                 .requestMatchers("/api/test/**").permitAll() // Allowed for testing purposes
                 .anyRequest().authenticated() // Everything else needs JWT
