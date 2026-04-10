@@ -1,6 +1,5 @@
 package com.evalur.domain.user.entity;
 
-
 import java.util.Collection;
 import java.util.List;
 
@@ -9,7 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.evalur.common.BaseEntity;
-import com.evalur.domain.institute.entity.Institute;
+import com.evalur.domain.organization.entity.Organization; // Shifted from Institute
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,28 +43,38 @@ public class User extends BaseEntity implements UserDetails {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "user_role", nullable = false)
     private Role role;
 
-   @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "institute_id", nullable = true) //  Explicitly allowed for Global ADMIN
-    private Institute institute;
+    // NEW FIELD: Required for targeting Assessment difficulty via LLM
+    @Column(name = "seniority_level")
+    private String seniorityLevel; 
 
-    // --- Helper Method to check if user is a global admin ---
-    public boolean isGlobalAdmin() {
-        return this.role == Role.ADMIN && this.institute == null;
+    // THE PIVOT: Bounded to an Organization instead of an Institute
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "organization_id", nullable = true) 
+    private Organization organization;
+
+    // --- Helper Methods for the B2B Multi-Tenant RBAC ---
+    
+    public boolean isPlatformAdmin() {
+        return this.role == Role.ADMIN && this.organization == null;
     }
-    // --- Spring Security Implementation ---
 
+    public boolean isCorporateAdmin() {
+        return this.role == Role.ADMIN && this.organization != null;
+    }
+
+  
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Returns the ROLE string for SecurityConfig to check
+        // Returns the ROLE string for SecurityConfig and JWT parsing checks
         return List.of(new SimpleGrantedAuthority(role.getAuthority()));
     }
 
     @Override
     public String getUsername() {
-        return email; // Using email as the login identifier
+        return email; // Using email as the primary authentication identifier
     }
 
     @Override
