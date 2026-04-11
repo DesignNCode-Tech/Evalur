@@ -1,5 +1,6 @@
-// This controller is for testing security configurations. It has endpoints that should only be accessible by certain roles.
-// This is Not the actual User Controller that will handle real user operations.
+// This controller is for testing B2B RBAC security configurations.
+// It has endpoints that should only be accessible by certain roles in the hierarchy.
+// This is NOT the actual User Controller that will handle real operations.
 
 package com.evalur.domain.user.controller;
 
@@ -7,6 +8,7 @@ import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,23 +17,30 @@ import com.evalur.domain.user.dto.UserResponse;
 import com.evalur.domain.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/test")
 public class TestSecurityController {
 
-    private final UserRepository UserRepository;
+    private final UserRepository userRepository;
 
-    @GetMapping("/student-only")
-   // @PreAuthorize("hasRole('STUDENT')")
-    public String studentRoute() {
-        return "If you see this, you are a Student (or higher)!";
+    @GetMapping("/candidate-only")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public String candidateRoute() {
+        return "If you see this, you have at least CANDIDATE access! (Sandbox Ready)";
+    }
+
+    @GetMapping("/manager-only")
+    @PreAuthorize("hasRole('MANAGER')")
+    public String managerRoute() {
+        return "If you see this, you have at least MANAGER access! (Can upload RAG docs)";
     }
 
     @GetMapping("/admin-only")
-   // @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public String adminRoute() {
-        return "Only (ADMIN) can see this.";
+        return "Only ADMIN can see this. (Global/Tenant Control)";
     }
 
    @GetMapping("/get-users")
@@ -40,13 +49,13 @@ public class TestSecurityController {
         Pageable firstTen = PageRequest.of(0, 10);
 
         // 2. Fetch from DB, map to DTO, and return
-        return UserRepository.findAll(firstTen)
+        return userRepository.findAll(firstTen)
                 .stream()
                 .map(user -> new UserResponse(
                         user.getName(),
                         user.getEmail(),
                         user.getRole(),
-                        user.getInstitute() != null ? user.getInstitute().getName() : "No Institute"
+                        user.getOrganization() != null ? user.getOrganization().getName() : "Platform Admin (Global)"
                 ))
                 .toList();
     }

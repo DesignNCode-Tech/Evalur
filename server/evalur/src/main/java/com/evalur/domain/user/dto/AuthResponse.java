@@ -2,9 +2,9 @@ package com.evalur.domain.user.dto;
 
 import com.evalur.domain.user.entity.Role;
 
-public record UserResponse(
-    String name,
+public record AuthResponse(
+    String token,
     String email,
     Role role,
-    String organizationName 
+    String message
 ) {}

@@ -50,6 +50,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("An internal server error occurred. Please contact support."));
+                .body(ApiResponse.error("An internal server error occurred. Please contact support." + ex.getMessage()));
     }
 }
