@@ -1,6 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
@@ -60,7 +64,7 @@
 }
 @layer base {
   body {
-    @apply dark:bg-gray-950 dark:text-gray-100;
+    @apply dark:bg-gray-950 dark:text-gray-100 bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
   .theme {
@@ -134,9 +138,12 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
-   
+
   html {
     @apply font-sans;
+  }
+  * {
+    @apply border-border outline-ring/50;
   }
 
 }
