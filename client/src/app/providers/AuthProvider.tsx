@@ -5,20 +5,31 @@ import { api } from "../../api/axios";
 
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   const queryClient = new QueryClient();
+
   const token = localStorage.getItem("jwt_token");
 
-  const { data: user, isLoading } = useQuery({
+  const {
+    data: user,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["authUser"],
     queryFn: async () => {
-      const response = await api.get("/");
-      return response.data;
+      try {
+        const response = await api.get("/");
+        return response.data;
+      } catch (error) {
+        console.log("Auth fetch failed:", error);
+        return null;
+      }
     },
     enabled: !!token,
     retry: false,
   });
+
   const login = (token: string) => {
     localStorage.setItem("jwt_token", token);
-    queryClient.invalidateQueries({ queryKey: ['authuser'] });
+    queryClient.invalidateQueries({ queryKey: ["authUser"] }); 
   };
 
   const logout = () => {
@@ -26,20 +37,21 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
     queryClient.setQueryData(["authUser"], null);
   };
 
-  
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        token, 
-        isAuthenticated: !!user, 
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!user, // 
         isLoading,
-        login, 
-        logout 
+        login,
+        logout,
       }}
     >
       {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center bg-black">Loading...</div>
+        <div className="min-h-screen flex items-center justify-center bg-black text-white">
+          Loading...
+        </div>
       ) : (
         children
       )}

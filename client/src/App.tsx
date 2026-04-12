@@ -6,16 +6,20 @@ import { BrowserRouter } from 'react-router-dom';
 import { ReactQueryProvider } from './app/providers/ReactQueryProvider';
 import { AuthProvider } from './app/providers/AuthProvider';
 import { AppRouter } from './app/router/AppRouter';
+import { LoginPage } from './feature/auth/pages/LoginPage';
 
 function App() {
   return (
-    <ReactQueryProvider>
+    <>
+      <ReactQueryProvider>
       <AuthProvider>
         <BrowserRouter>
           <AppRouter />
         </BrowserRouter>
       </AuthProvider>
     </ReactQueryProvider>
+    </>
+  
   );
 }
 
