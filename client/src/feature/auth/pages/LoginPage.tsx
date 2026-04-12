@@ -1,11 +1,3 @@
-<<<<<<< Updated upstream
-export const LoginPage = () => {
-  return (
-    <div>    
-      <h1>Login Page</h1>
-    </div>
-  )
-=======
 import { useForm } from "react-hook-form";
 import { useLogin } from "../hooks/useLogin";
 import { Input } from "@/components/ui/input";
@@ -105,5 +97,5 @@ export default function LoginPage() {
       </div>
     </div>
   );
->>>>>>> Stashed changes
+
 }

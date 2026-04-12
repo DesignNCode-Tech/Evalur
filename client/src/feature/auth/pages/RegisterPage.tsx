@@ -1,9 +1,3 @@
-<<<<<<< Updated upstream
-export const RegisterPage = () => {
-  return (
-    <div>    
-      <h1>Register Page</h1>
-=======
 import { useForm } from "react-hook-form";
 import { useRegister } from "../hooks/useRegister";
 import { Input } from "@/components/ui/input";
@@ -119,7 +113,6 @@ export const RegisterPage = () => {
           </CardContent>
         </Card>
       </div>
->>>>>>> Stashed changes
     </div>
   )
 }
