@@ -78,7 +78,7 @@ public class User extends BaseEntity implements UserDetails {
     // UserDetails Interface Methods (Spring Security)
     // ==========================================================
 
-    @JsonIgnore // 👈 Hide authorities from standard JSON responses
+    @JsonIgnore // Hide authorities from standard JSON responses
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Returns the ROLE string for SecurityConfig and JWT parsing checks

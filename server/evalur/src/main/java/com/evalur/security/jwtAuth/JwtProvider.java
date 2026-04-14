@@ -54,7 +54,6 @@ public class JwtProvider {
         return claimsResolver.apply(claims);
     }
 
-    // 👈 THIS WAS THE MISSING METHOD THAT BROKE YOUR CODE
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignInKey())
