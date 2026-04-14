@@ -14,7 +14,7 @@ public record RegisterRequest(
     @NotBlank(message = "Password cannot be blank")
     String password,
 
-    @NotBlank(message = "Seniority level is required")
+    // 
     String seniorityLevel,
 
     // Used for Path A (Admin/Boss)

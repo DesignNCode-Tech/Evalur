@@ -28,7 +28,7 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final AuthenticationManager authenticationManager;
 
-    @Transactional //  Rolls back Organization creation if User creation fails
+  @Transactional
     public AuthResponse register(RegisterRequest request) {
         
         if (userRepository.existsByEmail(request.email())) {
@@ -37,36 +37,40 @@ public class AuthService {
 
         Organization organization;
         Role assignedRole;
+        String assignedSeniority; 
 
         // ====================================================================
-        // PATH A: The "Boss" creating a new Organization
+        // PATH 1 (PRIORITY): Joining via Invite Token
         // ====================================================================
-        if (request.organizationName() != null && !request.organizationName().isBlank()) {
+        // We check this FIRST. If a token exists, we don't care about the org name.
+        if (request.inviteToken() != null && !request.inviteToken().isBlank()) {
+            Long orgId = jwtProvider.extractOrgId(request.inviteToken());
+            String roleString = jwtProvider.extractRole(request.inviteToken());
+            String seniorityFromToken = jwtProvider.extractSeniority(request.inviteToken());
+
+            organization = organizationRepository.findById(orgId)
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid invitation link: Organization not found."));
+            
+            assignedRole = Role.valueOf(roleString);
+            assignedSeniority = seniorityFromToken; // Force seniority from the secure token
+        } 
+        // ====================================================================
+        // PATH 2: Creating a new Organization (The "Boss" path)
+        // ====================================================================
+        else if (request.organizationName() != null && !request.organizationName().isBlank()) {
             if (organizationRepository.existsByName(request.organizationName())) {
                 throw new IllegalArgumentException("Organization name '" + request.organizationName() + "' is already taken.");
             }
             
-            // Build and save the new Organization
             organization = new Organization();
             organization.setName(request.organizationName());
             organization = organizationRepository.save(organization);
             
             assignedRole = Role.ADMIN;
+            assignedSeniority = request.seniorityLevel(); // Boss sets their own seniority
         } 
-        // ====================================================================
-        // PATH B: An employee/candidate joining via Invite Token
-        // ====================================================================
-        else if (request.inviteToken() != null && !request.inviteToken().isBlank()) {
-            Long orgId = jwtProvider.extractOrgId(request.inviteToken());
-            String roleString = jwtProvider.extractRole(request.inviteToken());
-
-            // Find the existing Organization using the secure token
-            organization = organizationRepository.findById(orgId)
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid invitation link: Organization not found."));
-            
-            assignedRole = Role.valueOf(roleString);
-        } else {
-            throw new IllegalArgumentException("Must provide either an Organization Name or an Invite Token.");
+        else {
+            throw new IllegalArgumentException("Registration failed: Provide an Organization Name to start a new company, or use an Invite Token to join one.");
         }
 
         // ====================================================================
@@ -78,16 +82,14 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.password()))
                 .role(assignedRole) 
                 .organization(organization) 
-                .seniorityLevel(request.seniorityLevel()) 
+                .seniorityLevel(assignedSeniority) 
                 .build();
 
         userRepository.save(user);
         String jwtToken = jwtProvider.generateToken(user);
 
-        // Returning your updated AuthResponse format
         return new AuthResponse(jwtToken, user.getEmail(), user.getRole(), "Registration successful");
     }
-
     public AuthResponse login(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())

@@ -8,14 +8,18 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody; // 👈 Don't forget this import
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.evalur.domain.user.dto.InviteRequest;
 import com.evalur.domain.user.entity.User;
 import com.evalur.domain.user.repository.UserRepository;
 import com.evalur.security.jwtAuth.JwtProvider;
 
 import lombok.RequiredArgsConstructor;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/org")
@@ -23,7 +27,6 @@ import lombok.RequiredArgsConstructor;
 public class InvitationController {
 
     private final JwtProvider jwtProvider;
-    // 1. Inject the repository
     private final UserRepository userRepository; 
 
     @Value("${evalur.client.url}") 
@@ -32,25 +35,31 @@ public class InvitationController {
     @PostMapping("/invite")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     @Transactional(readOnly = true) 
-    public ResponseEntity<Map<String, String>> generateInvite(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<Map<String, String>> generateInvite(
+            @Valid @RequestBody InviteRequest request, 
+            @AuthenticationPrincipal User currentUser
+    ) {
         
-        //  2. Fetch a fresh, database-attached user
+        // 1. Fetch fresh user to avoid LazyInitializationException
         User attachedUser = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 3. Call getOrganization() on the fresh user. H
+        // 2. Extract Organization data
         Long orgId = attachedUser.getOrganization().getId();
-        String orgName = attachedUser.getOrganization().getName(); 
+        String orgName = attachedUser.getOrganization().getName();
 
-        String inviteToken = jwtProvider.generateInviteToken(orgId, "CANDIDATE");
+        // 3. Generate the secure token with baked-in Role and Seniority
+        String inviteToken = jwtProvider.generateInviteToken(
+            orgId, 
+            orgName,
+            request.role(), 
+            request.seniorityLevel()
+        );
+
         String inviteLink = clientUrl + "/register/join?token=" + inviteToken;
 
-        // System.out.println("\n--- INVITATION GENERATED ---");
-        // System.out.println("Org: " + orgName + " | Link: " + inviteLink);
-        // System.out.println("----------------------------\n");
-
         return ResponseEntity.ok(Map.of(
-            "message", "Invite link generated",
+            "message", "Invite link generated successfully",
             "inviteLink", inviteLink
         ));
     }
