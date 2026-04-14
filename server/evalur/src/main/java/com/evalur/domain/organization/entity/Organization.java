@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.evalur.common.BaseEntity;
 import com.evalur.domain.user.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore; 
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -26,19 +27,23 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Organization extends BaseEntity {
 
-    @Column(nullable = false)
+    //  Added unique = true to enforce the "Zomato" rule at the DB level
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(unique = true, nullable = false)
+    //  Removed nullable = false so initial registration doesn't crash
+    @Column(unique = true)
     private String domain; 
 
     @Column(name = "subscription_tier")
-    private String subscriptionTier; 
+    @Builder.Default // Added default so new orgs have a baseline tier
+    private String subscriptionTier = "FREE"; 
 
     @Column(nullable = false)
-    private int apiQuotaLimit; 
+    @Builder.Default // Added default so DB insertion doesn't fail
+    private int apiQuotaLimit = 100; 
 
-    // One Organization has many users (Corporate Admins, Managers, Candidates)
+    @JsonIgnore //  CRITICAL: Prevents Jackson from infinitely serializing Org -> User -> Org
     @OneToMany(mappedBy = "organization", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<User> users = new ArrayList<>();

@@ -1,9 +1,9 @@
 package com.evalur.security.jwtAuth;
 
-
-
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -27,7 +27,6 @@ public class JwtProvider {
     @Value("${evalur.jwt.expirationMs}")
     private long jwtExpiration; 
 
-
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -46,10 +45,22 @@ public class JwtProvider {
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
-    // Internal helper logic...
+    // ========================================================================
+    // INTERNAL HELPER LOGIC
+    // ========================================================================
+
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = Jwts.parserBuilder().setSigningKey(getSignInKey()).build().parseClaimsJws(token).getBody();
+        final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
+    }
+
+    // 👈 THIS WAS THE MISSING METHOD THAT BROKE YOUR CODE
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSignInKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     private boolean isTokenExpired(String token) {
@@ -59,5 +70,36 @@ public class JwtProvider {
     private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // ========================================================================
+    // INVITATION LOGIC (B2B SaaS)
+    // ========================================================================
+
+    /**
+     * Generates a 7 day invite token for invitations, storing the Org ID and Role.
+     */
+    public String generateInviteToken(Long orgId, String role) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("orgId", orgId);
+        claims.put("role", role);
+        
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject("INVITATION_TOKEN") 
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 7 days
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // Helper to extract OrgId from the invite token
+    public Long extractOrgId(String token) {
+        return extractAllClaims(token).get("orgId", Long.class);
+    }
+
+    // Helper to extract Role from the invite token
+    public String extractRole(String token) {
+        return extractAllClaims(token).get("role", String.class);
     }
 }

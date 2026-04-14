@@ -2,6 +2,7 @@ package com.evalur.config;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
@@ -28,12 +29,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CustomAuthenticationEntryPoint authEntryPoint;
 
+    @Value("${evalur.client.url}") 
+    private String clientUrl;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
-            config.setAllowedOrigins(List.of("http://localhost:5173"));
+            config.setAllowedOrigins(List.of(clientUrl)); // Use the client URL from application.properties
             config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
             config.setAllowedHeaders(List.of("*"));
             config.setAllowCredentials(true);
@@ -61,10 +65,10 @@ public class SecurityConfig {
 
     @Bean
     public RoleHierarchy roleHierarchy() {
-        return RoleHierarchyImpl.fromHierarchy("""
-        ROLE_ADMIN > ROLE_INSTITUTE_ADMIN
-        ROLE_INSTITUTE_ADMIN > ROLE_STAFF
-        ROLE_STAFF > ROLE_STUDENT
-    """);
+        return RoleHierarchyImpl.fromHierarchy(
+                "ROLE_ADMIN > ROLE_MANAGER \n" +
+                "ROLE_MANAGER > ROLE_STAFF \n" +
+                "ROLE_STAFF > ROLE_CANDIDATE"
+        );
     }
 }
