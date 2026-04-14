@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.evalur.domain.user.entity.User; 
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -19,11 +21,9 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtProvider {
 
-    // 1. Load secret and expiration from application.properties
     @Value("${evalur.jwt.secret}")
     private String secretKey; 
 
-    // 2. Load expiration time (in milliseconds) from application.properties
     @Value("${evalur.jwt.expirationMs}")
     private long jwtExpiration; 
 
@@ -31,8 +31,22 @@ public class JwtProvider {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * UPDATED: Now includes Org ID and Role in the standard login token.
+     */
     public String generateToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        
+        // 👈 Check if it's our custom User to extract the Org ID
+        if (userDetails instanceof User user) {
+            claims.put("role", user.getRole().name());
+            if (user.getOrganization() != null) {
+                claims.put("orgId", user.getOrganization().getId());
+            }
+        }
+        
         return Jwts.builder()
+                .setClaims(claims) //  Claims must be set before subject/dates
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) 
@@ -49,7 +63,7 @@ public class JwtProvider {
     // INTERNAL HELPER LOGIC
     // ========================================================================
 
-    private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+    public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
@@ -72,12 +86,9 @@ public class JwtProvider {
     }
 
     // ========================================================================
-    // INVITATION LOGIC (B2B SaaS)
+    // B2B SAAS LOGIC (Multi-Tenancy)
     // ========================================================================
 
-    /**
-     * Generates a 7 day invite token for invitations, storing the Org ID and Role.
-     */
     public String generateInviteToken(Long orgId, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("orgId", orgId);
@@ -87,18 +98,20 @@ public class JwtProvider {
                 .setClaims(claims)
                 .setSubject("INVITATION_TOKEN") 
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 7)) // 7 days
+                // 7 days expiration for invites
+                .setExpiration(new Date(System.currentTimeMillis() + 604800000)) 
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Helper to extract OrgId from the invite token
     public Long extractOrgId(String token) {
-        return extractAllClaims(token).get("orgId", Long.class);
+        // Handle potential nulls or different numeric types from JSON
+        Object orgId = extractAllClaims(token).get("orgId");
+        if (orgId == null) return null;
+        return Long.valueOf(orgId.toString());
     }
 
-    // Helper to extract Role from the invite token
     public String extractRole(String token) {
-        return extractAllClaims(token).get("role", String.class);
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 }
