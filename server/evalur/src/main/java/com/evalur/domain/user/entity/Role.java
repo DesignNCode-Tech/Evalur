@@ -16,6 +16,9 @@ public enum Role {
     
     // Engineering Manager (Uploads docs, creates assessment blueprints, invites candidates)
     MANAGER("ROLE_MANAGER"),
+
+    // Candidate (Takes the 3-layer assessment via magic link in the split-screen UI)
+    STAFF("ROLE_STAFF"),
     
     // Interviewee (Takes the 3-layer assessment via magic link in the split-screen UI)
     CANDIDATE("ROLE_CANDIDATE");

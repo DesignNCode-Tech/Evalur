@@ -8,7 +8,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.evalur.common.BaseEntity;
-import com.evalur.domain.organization.entity.Organization; // Shifted from Institute
+import com.evalur.domain.organization.entity.Organization;
+import com.fasterxml.jackson.annotation.JsonIgnore; 
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -39,6 +40,7 @@ public class User extends BaseEntity implements UserDetails {
     @Column(unique = true, nullable = false)
     private String email;
 
+    @JsonIgnore // Prevents password from EVER being serialized into JSON
     @Column(nullable = false)
     private String password;
 
@@ -46,16 +48,18 @@ public class User extends BaseEntity implements UserDetails {
     @Column(name = "user_role", nullable = false)
     private Role role;
 
-    // NEW FIELD: Required for targeting Assessment difficulty via LLM
+    // Required for targeting Assessment difficulty via LLM
     @Column(name = "seniority_level")
     private String seniorityLevel; 
 
-    // THE PIVOT: Bounded to an Organization instead of an Institute
+    // Bounded to an Organization. Nullable allows Evalur Platform Admins to exist.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organization_id", nullable = true) 
     private Organization organization;
 
-    // --- Helper Methods for the B2B Multi-Tenant RBAC ---
+    // ==========================================================
+    // Helper Methods for the B2B Multi-Tenant RBAC
+    // ==========================================================
     
     public boolean isPlatformAdmin() {
         return this.role == Role.ADMIN && this.organization == null;
@@ -65,7 +69,16 @@ public class User extends BaseEntity implements UserDetails {
         return this.role == Role.ADMIN && this.organization != null;
     }
 
-  
+    // Safely get the organization ID without triggering LazyLoading exceptions
+    public Long getTenantId() {
+        return this.organization != null ? this.organization.getId() : null;
+    }
+
+    // ==========================================================
+    // UserDetails Interface Methods (Spring Security)
+    // ==========================================================
+
+    @JsonIgnore // Hide authorities from standard JSON responses
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // Returns the ROLE string for SecurityConfig and JWT parsing checks
