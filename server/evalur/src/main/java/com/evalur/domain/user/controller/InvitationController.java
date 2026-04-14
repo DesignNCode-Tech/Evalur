@@ -23,7 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class InvitationController {
 
     private final JwtProvider jwtProvider;
-    private final UserRepository userRepository; // 👈 1. Inject the repository
+    // 1. Inject the repository
+    private final UserRepository userRepository; 
 
     @Value("${evalur.client.url}") 
     private String clientUrl; 
@@ -33,11 +34,11 @@ public class InvitationController {
     @Transactional(readOnly = true) 
     public ResponseEntity<Map<String, String>> generateInvite(@AuthenticationPrincipal User currentUser) {
         
-        // 👈 2. Fetch a fresh, database-attached user
+        //  2. Fetch a fresh, database-attached user
         User attachedUser = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 👈 3. Call getOrganization() on the fresh user. Hibernate is happy now!
+        // 3. Call getOrganization() on the fresh user. Hibernate is happy now!
         Long orgId = attachedUser.getOrganization().getId();
         String orgName = attachedUser.getOrganization().getName(); 
 
