@@ -4,6 +4,7 @@ import PublicRoute from './PublicRoute';
 import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
+import { OrganizationRegisterPage } from '@/feature/auth/pages/OrganizationRegisterPage';
 
 
 
@@ -16,6 +17,7 @@ export const AppRouter = () => {
           <Route path='/' element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path='/org-register' element={<OrganizationRegisterPage/>} />
         </Route>
       </Route>
 
