@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final CustomAuthenticationEntryPoint authEntryPoint;
 
-    @Value("${evalur.client.url}") 
+    @Value("${evalur.client.url}")
     private String clientUrl;
 
     @Bean
@@ -55,6 +55,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/**").permitAll() // Public routes
                 .requestMatchers("/api/admin/**").hasRole("ADMIN") // Role-specific
                 .requestMatchers("/api/test/**").permitAll() // Allowed for testing purposes
+                .requestMatchers(
+                        "/v3/api-docs/**",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html"
+                ).permitAll()// Swagger docs should be public
                 .anyRequest().authenticated() // Everything else needs JWT
                 )
                 // 4. Add JWT Filter before the standard UsernamePassword filter
@@ -66,9 +71,9 @@ public class SecurityConfig {
     @Bean
     public RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy(
-                "ROLE_ADMIN > ROLE_MANAGER \n" +
-                "ROLE_MANAGER > ROLE_STAFF \n" +
-                "ROLE_STAFF > ROLE_CANDIDATE"
+                "ROLE_ADMIN > ROLE_MANAGER \n"
+                + "ROLE_MANAGER > ROLE_STAFF \n"
+                + "ROLE_STAFF > ROLE_CANDIDATE"
         );
     }
 }

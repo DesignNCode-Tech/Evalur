@@ -11,6 +11,8 @@ import io.github.cdimascio.dotenv.DotenvException;
 @EnableJpaAuditing
 public class EvalurApplication {
 
+
+    
     public static void main(String[] args) {
         
         // Attempt to load .env from multiple potential locations to accommodate different execution contexts.
