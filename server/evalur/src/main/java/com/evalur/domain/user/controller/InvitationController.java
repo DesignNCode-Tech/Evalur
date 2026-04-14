@@ -38,19 +38,19 @@ public class InvitationController {
         User attachedUser = userRepository.findByEmail(currentUser.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 3. Call getOrganization() on the fresh user. Hibernate is happy now!
+        // 3. Call getOrganization() on the fresh user. H
         Long orgId = attachedUser.getOrganization().getId();
         String orgName = attachedUser.getOrganization().getName(); 
 
         String inviteToken = jwtProvider.generateInviteToken(orgId, "CANDIDATE");
         String inviteLink = clientUrl + "/register/join?token=" + inviteToken;
 
-        System.out.println("\n--- INVITATION GENERATED ---");
-        System.out.println("Org: " + orgName + " | Link: " + inviteLink);
-        System.out.println("----------------------------\n");
+        // System.out.println("\n--- INVITATION GENERATED ---");
+        // System.out.println("Org: " + orgName + " | Link: " + inviteLink);
+        // System.out.println("----------------------------\n");
 
         return ResponseEntity.ok(Map.of(
-            "message", "Invite link logged to terminal",
+            "message", "Invite link generated",
             "inviteLink", inviteLink
         ));
     }
