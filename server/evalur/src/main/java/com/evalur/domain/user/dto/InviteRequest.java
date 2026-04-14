@@ -7,10 +7,14 @@ import jakarta.validation.constraints.NotBlank;
  * Used by Managers to invite others via the InvitationController.
  */
 public record InviteRequest(
-    @NotBlank(message = "Recipient email is required")
-    @Email(message = "Invalid email format")
-    String email,
+    //Enable for future use
+    // @NotBlank(message = "Recipient email is required")
+    // @Email(message = "Invalid email format")
+    // String email,
 
     @NotBlank(message = "Role assignment is required")
-    String role 
+    String role ,
+
+    @NotBlank(message = "Seniority level is required")
+    String seniorityLevel
 ) {}

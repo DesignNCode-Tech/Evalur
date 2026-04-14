@@ -37,7 +37,7 @@ public class JwtProvider {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         
-        // 👈 Check if it's our custom User to extract the Org ID
+        // Check if it's our custom User to extract the Org ID
         if (userDetails instanceof User user) {
             claims.put("role", user.getRole().name());
             if (user.getOrganization() != null) {
@@ -89,10 +89,12 @@ public class JwtProvider {
     // B2B SAAS LOGIC (Multi-Tenancy)
     // ========================================================================
 
-    public String generateInviteToken(Long orgId, String role) {
+    public String generateInviteToken(Long orgId, String orgName, String role, String seniority) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("orgId", orgId);
+        claims.put("orgName", orgName);
         claims.put("role", role);
+        claims.put("seniority", seniority);
         
         return Jwts.builder()
                 .setClaims(claims)
@@ -114,4 +116,8 @@ public class JwtProvider {
     public String extractRole(String token) {
         return extractClaim(token, claims -> claims.get("role", String.class));
     }
+
+    public String extractSeniority(String token) {
+    return extractClaim(token, claims -> claims.get("seniority", String.class));
+}
 }
