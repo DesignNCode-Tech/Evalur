@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { QueryClient, useQuery } from "@tanstack/react-query";
 import { AuthContext } from "./AuthContext";
-import { api } from "../../api/axios";
+import  api  from "../../api/axios";
 
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   const queryClient = new QueryClient();
