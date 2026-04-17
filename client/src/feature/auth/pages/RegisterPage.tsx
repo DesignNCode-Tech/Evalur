@@ -69,7 +69,7 @@ export default function RegisterPage() {
           {/* HEADER */}
           <div>
             <h2 className="text-2xl font-semibold text-black">
-              {inviteToken ? "Join Organization" : "Register"}
+              {inviteToken ? "Join" : "Register"}
             </h2>
 
             <p className="text-gray-600 text-sm">
