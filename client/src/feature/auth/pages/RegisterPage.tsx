@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { useRegister } from "../hooks/useRegister";
 import { useSearchParams, useNavigate } from "react-router-dom";
-
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-
 import {
   registerSchema
 } from "../schema/registerSchema";
@@ -29,7 +27,7 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
   });
 
-  // Decode invite token
+  
   useEffect(() => {
     if (inviteToken) {
       try {
@@ -44,7 +42,7 @@ export default function RegisterPage() {
   const onSubmit = (data: RegisterFormData) => {
     mutate({
       ...data,
-      seniorityLevel: decoded?.seniority || "JUNIOR",
+      seniorityLevel: decoded?.seniority || "SENIOR",
       inviteToken: inviteToken || null,
     });
   };
@@ -54,12 +52,17 @@ export default function RegisterPage() {
 
       {/* LEFT SIDE */}
       <div className="hidden md:flex flex-col justify-center px-16 bg-gray-200">
-        <h1 className="text-4xl font-bold mb-4 text-black">
-          Create Your Account
+        <h1 className="text-4xl font-bold mb-4">
+          {inviteToken && decoded
+            ? `Join ${decoded.orgName}`
+            : "Create Organization"}
         </h1>
-        {/* <p className="text-gray-700 text-lg">
-          Manage your team, employees, and onboarding seamlessly.
-        </p> */}
+
+        <p className="text-gray-700 text-lg">
+          {inviteToken
+            ? "Complete your registration to get started."
+            : "Set up your organization and start managing your team."}
+        </p>
       </div>
 
       {/* RIGHT SIDE */}
@@ -69,26 +72,25 @@ export default function RegisterPage() {
           {/* HEADER */}
           <div>
             <h2 className="text-2xl font-semibold text-black">
-              {inviteToken ? "Join" : "Register"}
+              {inviteToken && decoded
+                ? `Join ${decoded.orgName}`
+                : "Register"}
             </h2>
 
             <p className="text-gray-600 text-sm">
-              Enter your details to create an account
+              {inviteToken
+                ? "Enter your details to continue"
+                : "Create your organization account"}
             </p>
           </div>
 
           {/* FORM */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
 
-            {/* Name */}
+            {/* NAME */}
             <div>
-              <label className="text-sm font-medium text-black">
-                Full Name
-              </label>
-              <Input
-                {...register("name")}
-                className="bg-white text-black border"
-              />
+              <label className="text-sm font-medium">Full Name</label>
+              <Input {...register("name")} />
               {errors.name && (
                 <p className="text-red-500 text-sm">
                   {errors.name.message}
@@ -96,16 +98,10 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Email */}
+            {/* EMAIL */}
             <div>
-              <label className="text-sm font-medium text-black">
-                Email
-              </label>
-              <Input
-                type="email"
-                {...register("email")}
-                className="bg-white text-black border"
-              />
+              <label className="text-sm font-medium">Email</label>
+              <Input type="email" {...register("email")} />
               {errors.email && (
                 <p className="text-red-500 text-sm">
                   {errors.email.message}
@@ -113,16 +109,10 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Password */}
+            {/* PASSWORD */}
             <div>
-              <label className="text-sm font-medium text-black">
-                Password
-              </label>
-              <Input
-                type="password"
-                {...register("password")}
-                className="bg-white text-black border"
-              />
+              <label className="text-sm font-medium">Password</label>
+              <Input type="password" {...register("password")} />
               {errors.password && (
                 <p className="text-red-500 text-sm">
                   {errors.password.message}
@@ -133,13 +123,11 @@ export default function RegisterPage() {
             {/* ROLE (Invite only) */}
             {inviteToken && decoded && (
               <div>
-                <label className="text-sm font-medium text-black">
-                  Role
-                </label>
+                <label className="text-sm font-medium">Role</label>
                 <select
                   value={decoded.role}
                   disabled
-                  className="w-full p-2 border rounded-md bg-gray-100 text-black"
+                  className="w-full p-2 border rounded bg-gray-100"
                 >
                   <option>{decoded.role}</option>
                 </select>
@@ -149,24 +137,22 @@ export default function RegisterPage() {
             {/* ORGANIZATION */}
             {inviteToken && decoded ? (
               <div>
-                <label className="text-sm font-medium text-black">
+                <label className="text-sm font-medium">
                   Organization
                 </label>
-                <Input
-                  value={decoded.orgName}
-                  disabled
-                  className="bg-gray-100 text-black border"
-                />
+                <Input value={decoded.orgName} disabled />
               </div>
             ) : (
               <div>
-                <label className="text-sm font-medium text-black">
-                  Organization
+                <label className="text-sm font-medium">
+                  Organization Name
                 </label>
-                <Input
-                  {...register("organizationName")}
-                  className="bg-white text-black border"
-                />
+                <Input {...register("organizationName")} />
+                {errors.organizationName && (
+                  <p className="text-red-500 text-sm">
+                    {errors.organizationName.message}
+                  </p>
+                )}
               </div>
             )}
 
@@ -179,7 +165,7 @@ export default function RegisterPage() {
                 : "Create Account"}
             </Button>
 
-            {/* LOGIN LINK */}
+            {/* LOGIN */}
             <p className="text-sm text-center text-gray-600">
               Already have an account?{" "}
               <span

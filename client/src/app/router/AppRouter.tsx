@@ -5,7 +5,6 @@ import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
-import AdminRegisterPage from '@/feature/auth/pages/AdminRegisterPage';
 import InvitePage from '@/feature/auth/pages/InvitePage';
 
 
@@ -18,7 +17,6 @@ export const AppRouter = () => {
           <Route path='/' element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register/join" element={<RegisterPage />} />
-           <Route path="/register/admin" element={<AdminRegisterPage/>} />
           <Route path="/invite" element={<InvitePage />} />
         </Route>
       </Route>

@@ -13,7 +13,7 @@ export const useRegister = () => {
     onSuccess: (data) => {
       localStorage.setItem("token", data.token);
 
-      toast.success("Account created successfully 🎉", {
+      toast.success("Account created successfully", {
         description: "You can now access your dashboard",
       });
 
@@ -23,7 +23,6 @@ export const useRegister = () => {
       const message =
         error?.response?.data?.message || "Something went wrong";
 
-      // 🔥 Duplicate Email Case
       if (message.toLowerCase().includes("email")) {
         toast.error("Email already registered", {
           description: "Try logging in or use a different email",
