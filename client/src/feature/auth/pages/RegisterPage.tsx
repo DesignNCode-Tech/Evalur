@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useRegister } from "../hooks/useRegister";
+import { useRegister } from "../../../hooks/useRegister";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   registerSchema
 } from "../schema/registerSchema";
@@ -23,11 +24,16 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormData>({
+  } = useForm<z.input<typeof registerSchema>, any, RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      organizationName: "",
+    },
   });
 
-  
   useEffect(() => {
     if (inviteToken) {
       try {
@@ -47,19 +53,21 @@ export default function RegisterPage() {
     });
   };
 
+  const isInvite = Boolean(inviteToken);
+
   return (
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gray-100 text-black">
 
       {/* LEFT SIDE */}
       <div className="hidden md:flex flex-col justify-center px-16 bg-gray-200">
         <h1 className="text-4xl font-bold mb-4">
-          {inviteToken && decoded
+          {isInvite && decoded
             ? `Join ${decoded.orgName}`
             : "Create Organization"}
         </h1>
 
         <p className="text-gray-700 text-lg">
-          {inviteToken
+          {isInvite
             ? "Complete your registration to get started."
             : "Set up your organization and start managing your team."}
         </p>
@@ -72,13 +80,13 @@ export default function RegisterPage() {
           {/* HEADER */}
           <div>
             <h2 className="text-2xl font-semibold text-black">
-              {inviteToken && decoded
+              {isInvite && decoded
                 ? `Join ${decoded.orgName}`
                 : "Register"}
             </h2>
 
             <p className="text-gray-600 text-sm">
-              {inviteToken
+              {isInvite
                 ? "Enter your details to continue"
                 : "Create your organization account"}
             </p>
@@ -120,47 +128,46 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* ROLE (Invite only) */}
-            {inviteToken && decoded && (
-              <div>
-                <label className="text-sm font-medium">Role</label>
-                <select
-                  value={decoded.role}
-                  disabled
-                  className="w-full p-2 border rounded bg-gray-100"
-                >
-                  <option>{decoded.role}</option>
-                </select>
-              </div>
-            )}
+            {/* ROLE — ALWAYS RENDERED */}
+            <div style={{ display: isInvite ? "block" : "none" }}>
+              <label className="text-sm font-medium">Role</label>
+              <select
+                value={decoded?.role || ""}
+                disabled
+                className="w-full p-2 border rounded bg-gray-100"
+              >
+                <option>{decoded?.role || ""}</option>
+              </select>
+            </div>
 
-            {/* ORGANIZATION */}
-            {inviteToken && decoded ? (
-              <div>
-                <label className="text-sm font-medium">
-                  Organization
-                </label>
-                <Input value={decoded.orgName} disabled />
-              </div>
-            ) : (
-              <div>
-                <label className="text-sm font-medium">
-                  Organization Name
-                </label>
+            {/* ORGANIZATION — ALWAYS RENDERED */}
+            <div>
+              <label className="text-sm font-medium">
+                {isInvite ? "Organization" : "Organization Name"}
+              </label>
+
+              {isInvite ? (
+                <Input value={decoded?.orgName || ""} disabled />
+              ) : (
                 <Input {...register("organizationName")} />
-                {errors.organizationName && (
-                  <p className="text-red-500 text-sm">
-                    {errors.organizationName.message}
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+
+              {!isInvite && errors.organizationName && (
+                <p className="text-red-500 text-sm">
+                  {errors.organizationName.message}
+                </p>
+              )}
+            </div>
 
             {/* BUTTON */}
-            <Button type="submit" className="w-full bg-black text-white" disabled={isPending}>
+            <Button
+              type="submit"
+              className="w-full bg-black text-white"
+              disabled={isPending}
+            >
               {isPending
                 ? "Processing..."
-                : inviteToken
+                : isInvite
                 ? "Join Organization"
                 : "Create Account"}
             </Button>

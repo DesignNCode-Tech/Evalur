@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { registerUser } from "../api/register";
+import { registerUser } from "../../src/api/ApiRegister";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
