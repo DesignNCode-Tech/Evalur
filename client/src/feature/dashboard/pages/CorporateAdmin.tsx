@@ -1,4 +1,4 @@
-import InviteForm from "@/components/InvitePage"
+import InviteForm from "@/feature/dashboard/pages/InvitePage"
 
 export const CorporateAdmin = () => {
   return (

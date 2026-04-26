@@ -5,7 +5,7 @@ import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
-import InvitePage from '@/components/InvitePage';
+import InvitePage from '@/feature/dashboard/pages/InvitePage';
 
 export const AppRouter = () => {
   return (

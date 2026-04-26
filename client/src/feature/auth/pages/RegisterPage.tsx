@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useRegister } from "../../../hooks/useRegister";
+import { useRegister } from "../../auth/hooks/useRegister";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
