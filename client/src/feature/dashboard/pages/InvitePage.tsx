@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useInvite } from "../hooks/useInvite";
-
 import {
   Card,
   CardContent,
