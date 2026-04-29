@@ -1,9 +1,6 @@
 import './App.css'
-import { BrowserRouter, Routes, Route } from "react-router-dom"
-import { LoginPage } from "./feature/auth/pages/LoginPage"
-import './index.css'
-<<<<<<< Updated upstream
 
+import './index.css'
 
 import { BrowserRouter } from 'react-router-dom';
 import { ReactQueryProvider } from './app/providers/ReactQueryProvider';
@@ -20,20 +17,6 @@ function App() {
       </AuthProvider>
     </ReactQueryProvider>
   );
-=======
-
-function App() {
-  return (
-    <>
-     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/login" element={<LoginPage />} />
-      </Routes>
-    </BrowserRouter>
-    </>
-  )
->>>>>>> Stashed changes
 }
 
 export default App;

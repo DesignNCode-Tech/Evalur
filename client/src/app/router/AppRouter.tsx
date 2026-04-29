@@ -3,8 +3,10 @@ import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
 import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
-import { HomePage } from '../../feature/home';
+import { HomePage } from '@/feature/home/HomePage';
+
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
+import { OrganizationSettings } from '@/feature/dashboard/pages/Settings';
 
 
 export const AppRouter = () => {
@@ -16,6 +18,7 @@ export const AppRouter = () => {
           <Route path='/' element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path='/Setting' element={<OrganizationSettings/>}
         </Route>
       </Route>
 
