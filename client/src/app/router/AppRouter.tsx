@@ -5,30 +5,30 @@ import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
-
+import InvitePage from '@/feature/dashboard/pages/InvitePage';
 
 export const AppRouter = () => {
   return (
     <Routes>
+
       {/* PUBLIC ROUTES (Only accessible if NOT logged in) */}
       <Route element={<PublicRoute />}>
         <Route element={<AuthLayout />}>
           <Route path='/' element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/register" element={<RegisterPage />} />
         </Route>
       </Route>
 
       {/* PROTECTED ROUTES (Only accessible IF logged in) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-
           {/* //add dashboard, settings, profile routes here */}
         </Route>
 
         {/* Locked Down Exam Navigation */}
         <Route element={<SecureLayout />}>
-          {/* //add secure routes here, like proctoring or assesment mode */}
+          {/* //add secure routes here */}
         </Route>
       </Route>
 
@@ -38,8 +38,14 @@ export const AppRouter = () => {
         <Route path="/corporate" element={<CorporateAdmin />} />
       </Route>
 
-      {/* CATCH ALL - Redirects unknown URLs to Dashboard (or Login if logged out) */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* INVITE ROUTE (FIXED AS PER REVIEW) */}
+      <Route element={<ProtectedRoute allowedRoles={["CORPORATE_ADMIN", "MANAGER"]} />}>
+        <Route path="/invite" element={<InvitePage />} />
+      </Route>
+
+      {/* CATCH ALL */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
     </Routes>
   );
 };
