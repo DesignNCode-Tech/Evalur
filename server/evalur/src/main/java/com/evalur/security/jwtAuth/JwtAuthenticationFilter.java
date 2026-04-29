@@ -11,20 +11,24 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.evalur.domain.user.entity.User; 
+import com.evalur.domain.user.entity.User;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j // Uses Lombok for clean logging
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
-    private final UserDetailsService userDetailsService; 
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -32,50 +36,63 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
 
+        // 1. Skip filter if no Bearer token is found
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwt = authHeader.substring(7);
-        userEmail = jwtProvider.extractUsername(jwt);
+        try {
+            jwt = authHeader.substring(7);
+            userEmail = jwtProvider.extractUsername(jwt);
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            
-            if (jwtProvider.isTokenValid(jwt, userDetails)) {
-                
-                // ==========================================================
-                // ISSUE #29: TENANT VALIDATION
-                // ==========================================================
-                // We extract the orgId from the token to ensure the request 
-                // is bounded by the JWT's claims, not just the DB state.
-                Long orgIdFromToken = jwtProvider.extractOrgId(jwt);
-                
-                if (userDetails instanceof User user) {
-                    Long userActualOrgId = (user.getOrganization() != null) 
-                            ? user.getOrganization().getId() : null;
+            // 2. Process authentication if user is found and not already authenticated
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                    // Security Cross-Check: Does the JWT Org match the DB Org?
-                    // This prevents "Token Hijacking" across organizations.
-                    if (orgIdFromToken != null && !orgIdFromToken.equals(userActualOrgId)) {
-                        response.sendError(HttpServletResponse.SC_FORBIDDEN, "Tenant mismatch");
-                        return;
+                if (jwtProvider.isTokenValid(jwt, userDetails)) {
+                    
+                    // ==========================================================
+                    // TENANT VALIDATION (Multi-Tenant Logic for Evalur)
+                    // ==========================================================
+                    Long orgIdFromToken = jwtProvider.extractOrgId(jwt);
+
+                    if (userDetails instanceof User user) {
+                        Long userActualOrgId = (user.getOrganization() != null)
+                                ? user.getOrganization().getId() : null;
+
+                        // Security Cross-Check: Prevent Token Hijacking across Orgs
+                        if (orgIdFromToken != null && !orgIdFromToken.equals(userActualOrgId)) {
+                            log.warn("Tenant mismatch detected for user: {}", userEmail);
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Tenant mismatch");
+                            return; 
+                        }
                     }
-                }
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (ExpiredJwtException e) {
+            // THE FIX: Catch expired tokens so they don't crash the server
+            log.warn("JWT expired: {}", e.getMessage());
+            // We do NOT throw an exception here. We let the request continue.
+            // If the endpoint is protected, Spring Security will block it automatically.
+        } catch (JwtException | IllegalArgumentException e) {
+            // Catch malformed or invalid signatures
+            log.error("JWT validation failed: {}", e.getMessage());
         }
+
+        // 3. Always continue the chain so the request can reach the Controller
         filterChain.doFilter(request, response);
     }
 }
