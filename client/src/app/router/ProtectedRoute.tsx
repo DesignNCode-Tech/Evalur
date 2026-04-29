@@ -1,20 +1,36 @@
-import { Navigate } from "react-router-dom";
-import { Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../providers/AuthContext";
 
-const ProtectedRoute = ({ allowedRoles }: { allowedRoles?: string[] }) => {
-  const { isAuthenticated } = useAuth();
+type ProtectedRouteProps = {
+  allowedRoles?: string[];
+};
 
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated, user, isLoading } = useAuth();
+  const location = useLocation();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (isLoading) {
+    return null; 
+  }
 
+  // ❌ Not logged in
+  if (!isAuthenticated || !user) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  // ❌ Role not allowed
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
+  // ✅ Allowed
   return <Outlet />;
 };
 
