@@ -1,12 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRegister } from "../../auth/hooks/useRegister";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { registerSchema } from "../schema/registerSchema";
 import type { RegisterFormData } from '../schema/registerSchema';
 
-// Using only the components you confirmed you have
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -36,16 +35,17 @@ export default function RegisterPage() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      organizationName: "",
+     name: "",
+    email: "",
+    password: "",
+    organizationName: "",
+    inviteToken: inviteToken || null,
     },
   });
 
   const isInvite = Boolean(inviteToken);
 
-  const onSubmit = (data: RegisterFormData) => {
+  const onSubmit: SubmitHandler<RegisterFormData> = (data) => {
     mutate(
       {
         ...data,
