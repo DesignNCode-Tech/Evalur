@@ -17,7 +17,7 @@ export const useRegister = () => {
         description: "You can now access your dashboard",
       });
 
-      navigate("/dashboard");
+      navigate("/auth/login");
     },
     onError: (error: any) => {
       const message =

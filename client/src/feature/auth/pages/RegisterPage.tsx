@@ -26,11 +26,12 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<z.input<typeof registerSchema>, any, RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      organizationName: "",
+   defaultValues: {
+    name: "",
+    email: "",
+    password: "",
+    organizationName: "",
+    inviteToken: inviteToken || null,
     },
   });
 
@@ -176,7 +177,7 @@ export default function RegisterPage() {
             <p className="text-sm text-center text-gray-600">
               Already have an account?{" "}
               <span
-                onClick={() => navigate("/login")}
+                onClick={() => navigate("/auth/login")}
                 className="font-medium text-black cursor-pointer hover:underline"
               >
                 Login

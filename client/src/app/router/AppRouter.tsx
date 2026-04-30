@@ -6,6 +6,7 @@ import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
 import InvitePage from '@/feature/dashboard/pages/InvitePage';
+import DashboardPage from '@/feature/dashboard/pages/DashboardPage';
 
 export const AppRouter = () => {
   return (
@@ -15,15 +16,15 @@ export const AppRouter = () => {
       <Route element={<PublicRoute />}>
         <Route element={<AuthLayout />}>
           <Route path='/' element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register/join" element={<RegisterPage />} />
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth/register" element={<RegisterPage />} />
         </Route>
       </Route>
 
       {/* PROTECTED ROUTES (Only accessible IF logged in) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          {/* //add dashboard, settings, profile routes here */}
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
 
         {/* Locked Down Exam Navigation */}
@@ -44,7 +45,7 @@ export const AppRouter = () => {
       </Route>
 
       {/* CATCH ALL */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   );
