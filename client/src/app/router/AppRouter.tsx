@@ -6,6 +6,7 @@ import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
 import InvitePage from '@/feature/dashboard/pages/InvitePage';
+import DashboardPage from '@/feature/dashboard/pages/DashboardPage';
 
 export const AppRouter = () => {
   return (
@@ -23,7 +24,7 @@ export const AppRouter = () => {
       {/* PROTECTED ROUTES (Only accessible IF logged in) */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          {/* //add dashboard, settings, profile routes here */}
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Route>
 
         {/* Locked Down Exam Navigation */}

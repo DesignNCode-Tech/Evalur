@@ -34,8 +34,8 @@ export default function RegisterPage() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: {
-     name: "",
+   defaultValues: {
+    name: "",
     email: "",
     password: "",
     organizationName: "",
