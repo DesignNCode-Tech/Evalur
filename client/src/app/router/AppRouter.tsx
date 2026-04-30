@@ -4,9 +4,8 @@ import PublicRoute from './PublicRoute';
 import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
-import { CorporateAdmin } from '@/feature/dashboard/pages/CorporateAdmin';
-import InvitePage from '@/feature/dashboard/pages/InvitePage';
 import DashboardPage from '@/feature/dashboard/pages/DashboardPage';
+import UnauthorizedPage from '@/common/pages/UnauthorizedPage';
 
 export const AppRouter = () => {
   return (
@@ -33,18 +32,19 @@ export const AppRouter = () => {
         </Route>
       </Route>
 
-      {/* 👇 ROLE PROTECTED ROUTE */}
+      {/*  ROLE PROTECTED ROUTE */}
       {/* Admin only route */}
-      <Route element={<ProtectedRoute allowedRoles={["CORPORATE_ADMIN"]} />}>
-        <Route path="/corporate" element={<CorporateAdmin />} />
+      <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
+       {/* This route is now protected and only accessible to ADMIN role */}
       </Route>
 
       {/* INVITE ROUTE (FIXED AS PER REVIEW) */}
-      <Route element={<ProtectedRoute allowedRoles={["CORPORATE_ADMIN", "MANAGER"]} />}>
-        <Route path="/invite" element={<InvitePage />} />
+      <Route element={<ProtectedRoute allowedRoles={["ADMIN", "MANAGER"]} />}>
+       {/* This route is now protected and only accessible to ADMIN and MANAGER roles */}
       </Route>
 
       {/* CATCH ALL */}
+      <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
