@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Updated to include administrative and executive roles
 export const SeniorityLevel = z.enum([
   "INTERN",
   "JUNIOR",
@@ -37,9 +36,11 @@ export const registerSchema = z.object({
   
   inviteToken: z.string().nullable().optional(),
   
+  // Defaulting to CEO for new organization registrations
   seniorityLevel: SeniorityLevel.default("CEO"),
 })
 .refine((data) => {
+  // If this is a fresh registration (no invite token), Org Name is MANDATORY
   if (!data.inviteToken) {
     return data.organizationName && data.organizationName.length > 0;
   }

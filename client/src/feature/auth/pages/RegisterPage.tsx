@@ -1,13 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRegister } from "../../auth/hooks/useRegister";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import {
-  registerSchema
-} from "../schema/registerSchema";
-import type { RegisterFormData} from '../schema/registerSchema'
+import { registerSchema } from "../schema/registerSchema";
+import type { RegisterFormData } from '../schema/registerSchema';
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,13 +15,24 @@ export default function RegisterPage() {
   const navigate = useNavigate();
 
   const inviteToken = searchParams.get("token");
-  const [decoded, setDecoded] = useState<any>(null);
+  const decoded = useMemo(() => {
+    if (inviteToken) {
+      try {
+        const payload = JSON.parse(atob(inviteToken.split(".")[1]));
+        return payload;
+      } catch (err) {
+        console.error("Invalid invitation token", err);
+        return null;
+      }
+    }
+    return null;
+  }, [inviteToken]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.input<typeof registerSchema>, any, RegisterFormData>({
+  } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
    defaultValues: {
     name: "",
@@ -35,155 +43,99 @@ export default function RegisterPage() {
     },
   });
 
-  useEffect(() => {
-    if (inviteToken) {
-      try {
-        const payload = JSON.parse(atob(inviteToken.split(".")[1]));
-        setDecoded(payload);
-      } catch {
-        console.error("Invalid token");
-      }
-    }
-  }, [inviteToken]);
-
-  const onSubmit = (data: RegisterFormData) => {
-    mutate({
-      ...data,
-      seniorityLevel: decoded?.seniority || "SENIOR",
-      inviteToken: inviteToken || null,
-    });
-  };
-
   const isInvite = Boolean(inviteToken);
 
+  const onSubmit: SubmitHandler<RegisterFormData> = (data) => {
+    mutate(
+      {
+        ...data,
+        seniorityLevel: decoded?.seniority || "JUNIOR",
+        inviteToken: inviteToken || null,
+      },
+      {
+        onSuccess: () => {
+          navigate("/auth/login");
+        },
+      }
+    );
+  };
+
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-gray-100 text-black">
-
-      {/* LEFT SIDE */}
-      <div className="hidden md:flex flex-col justify-center px-16 bg-gray-200">
-        <h1 className="text-4xl font-bold mb-4">
-          {isInvite && decoded
-            ? `Join ${decoded.orgName}`
-            : "Create Organization"}
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50 text-slate-900 font-sans">
+      
+      {/* BRANDING SIDE */}
+      <div className="hidden md:flex flex-col justify-center px-16 bg-slate-900 text-white">
+        <h1 className="text-5xl font-bold mb-6 tracking-tight">
+          {isInvite && decoded ? `Join ${decoded.orgName}` : "Evalur"}
         </h1>
-
-        <p className="text-gray-700 text-lg">
+        <p className="text-slate-400 text-xl max-w-lg leading-relaxed">
           {isInvite
-            ? "Complete your registration to get started."
-            : "Set up your organization and start managing your team."}
+            ? "Your assessment environment is ready. Finish your profile to begin."
+            : "The next generation of multi-tenant hiring infrastructure."}
         </p>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="flex items-center justify-center px-6">
-        <div className="w-full max-w-md space-y-6 bg-white p-6 rounded-lg shadow">
-
-          {/* HEADER */}
+      {/* FORM SIDE */}
+      <div className="flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-sm border border-slate-200">
           <div>
-            <h2 className="text-2xl font-semibold text-black">
-              {isInvite && decoded
-                ? `Join ${decoded.orgName}`
-                : "Register"}
+            <h2 className="text-3xl font-bold">
+              {isInvite ? "Welcome" : "Get Started"}
             </h2>
-
-            <p className="text-gray-600 text-sm">
-              {isInvite
-                ? "Enter your details to continue"
-                : "Create your organization account"}
+            <p className="text-slate-500 mt-2">
+              {isInvite ? "Fill in your details to join the organization." : "Create your admin account."}
             </p>
           </div>
 
-          {/* FORM */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
-            {/* NAME */}
-            <div>
-              <label className="text-sm font-medium">Full Name</label>
-              <Input {...register("name")} />
-              {errors.name && (
-                <p className="text-red-500 text-sm">
-                  {errors.name.message}
-                </p>
-              )}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Full Name</label>
+              <Input 
+                {...register("name")} 
+                placeholder="Shreyash Bhosale" 
+                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
 
-            {/* EMAIL */}
-            <div>
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" {...register("email")} />
-              {errors.email && (
-                <p className="text-red-500 text-sm">
-                  {errors.email.message}
-                </p>
-              )}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Email Address</label>
+              <Input 
+                type="email" 
+                {...register("email")} 
+                placeholder="name@example.com"
+                className={errors.email ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
-            {/* PASSWORD */}
-            <div>
-              <label className="text-sm font-medium">Password</label>
-              <Input type="password" {...register("password")} />
-              {errors.password && (
-                <p className="text-red-500 text-sm">
-                  {errors.password.message}
-                </p>
-              )}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Password</label>
+              <Input 
+                type="password" 
+                {...register("password")} 
+                placeholder="••••••••"
+                className={errors.password ? "border-red-500 focus-visible:ring-red-500" : ""}
+              />
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
-            {/* ROLE — ALWAYS RENDERED */}
-            <div style={{ display: isInvite ? "block" : "none" }}>
-              <label className="text-sm font-medium">Role</label>
-              <select
-                value={decoded?.role || ""}
-                disabled
-                className="w-full p-2 border rounded bg-gray-100"
-              >
-                <option>{decoded?.role || ""}</option>
-              </select>
-            </div>
+            {!isInvite && (
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Organization Name</label>
+                <Input 
+                  {...register("organizationName")} 
+                  placeholder="Evalur Corp"
+                  className={errors.organizationName ? "border-red-500 focus-visible:ring-red-500" : ""}
+                />
+                {errors.organizationName && <p className="text-red-500 text-xs mt-1">{errors.organizationName.message}</p>}
+              </div>
+            )}
 
-            {/* ORGANIZATION — ALWAYS RENDERED */}
-            <div>
-              <label className="text-sm font-medium">
-                {isInvite ? "Organization" : "Organization Name"}
-              </label>
-
-              {isInvite ? (
-                <Input value={decoded?.orgName || ""} disabled />
-              ) : (
-                <Input {...register("organizationName")} />
-              )}
-
-              {!isInvite && errors.organizationName && (
-                <p className="text-red-500 text-sm">
-                  {errors.organizationName.message}
-                </p>
-              )}
-            </div>
-
-            {/* BUTTON */}
-            <Button
-              type="submit"
-              className="w-full bg-black text-white"
-              disabled={isPending}
-            >
-              {isPending
-                ? "Processing..."
-                : isInvite
-                ? "Join Organization"
-                : "Create Account"}
+            <Button type="submit" className="w-full bg-slate-900 hover:bg-slate-800 text-white h-11" disabled={isPending}>
+              {isPending ? "Setting up..." : isInvite ? "Join Team" : "Register Organization"}
             </Button>
-
-            {/* LOGIN */}
-            <p className="text-sm text-center text-gray-600">
-              Already have an account?{" "}
-              <span
-                onClick={() => navigate("/auth/login")}
-                className="font-medium text-black cursor-pointer hover:underline"
-              >
-                Login
-              </span>
-            </p>
-
           </form>
         </div>
       </div>
