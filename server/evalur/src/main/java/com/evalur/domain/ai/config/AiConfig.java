@@ -2,24 +2,15 @@ package com.evalur.domain.ai.config;
 
 
 // TextSegment is now here:
-import dev.langchain4j.data.segment.TextSegment; 
-
-// Gemini model is here (ensure no typos in the package name):
-import dev.langchain4j.model.googleai.GoogleAiGeminiEmbeddingModel;
-
-// Other common imports you'll need for Issue #57:
-import dev.langchain4j.data.document.Document;
-import dev.langchain4j.data.document.DocumentSplitter;
-import dev.langchain4j.data.document.splitter.DefaultDocumentSplitter;
-
-
-
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Value; 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 
 @Configuration
 public class AiConfig {
@@ -38,7 +29,7 @@ public class AiConfig {
 
     @Bean
     public EmbeddingModel embeddingModel() {
-        return GoogleAiGeminiEmbeddingModel.builder()
+        return GoogleAiEmbeddingModel.builder()
             .apiKey(geminiApiKey)
             .modelName("text-embedding-004")
             .build();
