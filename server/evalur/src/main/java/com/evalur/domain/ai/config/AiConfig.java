@@ -2,9 +2,12 @@ package com.evalur.domain.ai.config;
 
 
 // TextSegment is now here:
-import org.springframework.beans.factory.annotation.Value; 
+import java.util.concurrent.Executor; 
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -46,5 +49,16 @@ public class AiConfig {
             .table("ai_document_chunks")
             .dimension(768) // Matches Gemini's output
             .build();
+    }
+
+    @Bean(name = "taskExecutor")
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5);
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("AiIngest-");
+        executor.initialize();
+        return executor;
     }
 }
