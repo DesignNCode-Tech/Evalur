@@ -1,13 +1,13 @@
 package com.evalur.domain.ai.repository;
 
-import com.evalur.domain.ai.entity.AiDocument;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import java.util.List;
-import java.util.UUID;
+
+import com.evalur.domain.ai.entity.AiDocument;
 
 @Repository
-public interface AiDocumentRepository extends JpaRepository<AiDocument, UUID> {
-    // Fetches document library for a specific organization
+public interface AiDocumentRepository extends JpaRepository<AiDocument, Long> {
     List<AiDocument> findByOrganizationIdOrderByCreatedAtDesc(Long organizationId);
 }

@@ -1,6 +1,6 @@
 package com.evalur.domain.ai.config;
 
-import java.util.concurrent.Executor; 
+import java.util.concurrent.Executor;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -19,7 +19,7 @@ public class AiConfig {
     @Value("${evalur.ai.google-gemini.api-key}")
     private String geminiApiKey;
 
-    @Value("${spring.db.host}") 
+    @Value("${spring.db.host}")
     private String dbHost;
 
     @Value("${spring.datasource.username}")
@@ -31,22 +31,22 @@ public class AiConfig {
     @Bean
     public EmbeddingModel embeddingModel() {
         return GoogleAiEmbeddingModel.builder()
-            .apiKey(geminiApiKey)
-            .modelName("gemini-embedding-001") 
-            .build();
+                .apiKey(geminiApiKey)
+                .modelName("gemini-embedding-001")
+                .build();
     }
 
     @Bean
     public EmbeddingStore<TextSegment> embeddingStore() {
         return PgVectorEmbeddingStore.builder()
-            .host(dbHost)
-            .port(5432)
-            .database("neondb")
-            .user(dbUser)
-            .password(dbPassword)
-            .table("ai_document_chunks")
-            .dimension(768) // Matches gemini-embedding-001
-            .build();
+                .host(dbHost)
+                .port(5432)
+                .database("neondb")
+                .user(dbUser)
+                .password(dbPassword)
+                .table("ai_document_chunks")
+                .dimension(3072)
+                .build();
     }
 
     @Bean(name = "taskExecutor")

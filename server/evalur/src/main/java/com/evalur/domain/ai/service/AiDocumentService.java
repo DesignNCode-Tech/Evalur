@@ -100,21 +100,40 @@ public class AiDocumentService {
         return null;
     }
 
-    private void processAndStore(String markdown, AiDocument aiDoc) {
-        Document document = Document.from(markdown);
-        // Chunking the doc into 1000 character pieces[cite: 1]
-        List<TextSegment> segments = DocumentSplitters.recursive(1000, 100).split(document);
+   private void processAndStore(String markdown, AiDocument aiDoc) {
+    Document document = Document.from(markdown);
+    // 1. Generate all segments from the 100-page doc
+    List<TextSegment> allSegments = DocumentSplitters.recursive(1000, 100).split(document);
 
-        // Tagging each chunk with the Organization and Document ID[cite: 1]
-        segments.forEach(segment -> {
-            segment.metadata().add("orgId", aiDoc.getOrganization().getId());
-            segment.metadata().add("documentId", aiDoc.getId().toString());
-        });
+    log.info("Total segments generated: {}. Starting batched vectorization...", allSegments.size());
 
-        // Embedding (Vectorizing) and saving to Neon[cite: 1]
-        embeddingStore.addAll(embeddingModel.embedAll(segments).content(), segments);
+    // 2. Define batch size (e.g., 20 chunks per API call)
+    int batchSize = 20; 
+    
+    for (int i = 0; i < allSegments.size(); i += batchSize) {
+        // Calculate the end of the current batch
+        int end = Math.min(i + batchSize, allSegments.size());
+        List<TextSegment> batch = allSegments.subList(i, end);
+
+        try {
+            // 3. Embed and persisted this specific batch to Neon
+            embeddingStore.addAll(embeddingModel.embedAll(batch).content(), batch);
+            
+            log.info("Successfully vectorized batch: {} to {} of {}", i, end, allSegments.size());
+
+            // 4. "Slow & Steady" - Pause for 2 seconds to stay under the 100 requests/min quota
+            if (end < allSegments.size()) {
+                TimeUnit.SECONDS.sleep(2); 
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Vectorization interrupted during batching", e);
+        } catch (Exception e) {
+            log.error("Failed to process batch starting at index {}: {}", i, e.getMessage());
+            throw e; // This will trigger the FAILED status in the calling method
+        }
     }
-
+}
     private void updateStatus(AiDocument doc, AiDocument.IngestionStatus status) {
         doc.setStatus(status);
         aiDocumentRepository.save(doc);
