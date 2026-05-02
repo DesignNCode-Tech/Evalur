@@ -1,5 +1,8 @@
 package com.evalur.domain.assessment.entity;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.evalur.common.BaseEntity;
 import com.evalur.domain.organization.entity.Organization;
 
@@ -28,7 +31,8 @@ public class Assessment extends BaseEntity {
     private String role;
     private String seniority;
 
-    @Column(columnDefinition = "JSONB")
+    @JdbcTypeCode(SqlTypes.JSON) 
+    @Column(columnDefinition = "jsonb")
     private String content;
 
     

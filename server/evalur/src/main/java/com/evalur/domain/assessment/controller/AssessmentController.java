@@ -38,12 +38,13 @@ public class AssessmentController {
                 .seniority(request.seniority())
                 .organization(currentUser.getOrganization())
                 .status(Assessment.AssessmentStatus.GENERATING)
+                .content("{}")
                 .build();
 
         assessment = assessmentRepository.save(assessment);
 
         // Trigger async generation in the background
-        assessmentService.runGenerationPipeline(assessment, request.documentIds(), request.jobDescription());
+        assessmentService.runGenerationPipeline(assessment.getId(), request.documentIds(), request.jobDescription());
 
         return ResponseEntity.accepted().body(ApiResponse.success(
                 Map.of("id", assessment.getId(), "status", "GENERATING"),

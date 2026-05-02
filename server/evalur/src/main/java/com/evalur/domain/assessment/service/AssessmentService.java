@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.evalur.domain.ai.service.AiGenerationService;
 import com.evalur.domain.ai.service.RetrievalService;
@@ -22,17 +23,16 @@ public class AssessmentService {
     private final RetrievalService retrievalService;
     private final AiGenerationService aiGenerationService;
 
-    /**
-     * Orchestrates the entire assessment generation pipeline: 1. Retrieves
-     * relevant context from the provided document IDs. 2. Calls the AI
-     * generation service to create the assessment JSON. 3. Saves the generated
-     * content back to the database and updates status.
-     */
-
     @Async("taskExecutor")
-    public void runGenerationPipeline(Assessment assessment, List<String> documentIds, String jobDescription) {
+    public void runGenerationPipeline(Long assessmentId, List<String> documentIds, String jobDescription) {
+        // 1. Fetch a "fresh" copy of the assessment inside this thread
+        Assessment assessment = assessmentRepository.findById(assessmentId)
+                .orElseThrow(() -> new RuntimeException("Assessment not found for ID: " + assessmentId));
+
         try {
-            // 1. Get Context from PDFs (if any are selected)
+            log.info("Starting generation for Assessment ID: {}", assessmentId);
+
+            // 2. Get Context from PDFs
             String pdfContext = "";
             if (documentIds != null && !documentIds.isEmpty()) {
                 pdfContext = retrievalService.getRelevantContext(
@@ -42,23 +42,45 @@ public class AssessmentService {
                 );
             }
 
-            // 2. Generate JSON using BOTH sources
+            // 3. Generate JSON using BOTH sources
             String jsonContent = aiGenerationService.generateAssessmentJson(
                     assessment.getRole(),
                     assessment.getSeniority(),
-                    pdfContext, // Knowledge from manuals
-                    jobDescription // Specific needs from manager
+                    pdfContext,
+                    jobDescription
             );
 
+            // 4. Log the length to verify we received the data shown in your chart
+            log.info("Gemini returned {} characters of JSON content.", jsonContent.length());
+
+            // 5. Update and Save
             assessment.setContent(jsonContent);
             assessment.setStatus(Assessment.AssessmentStatus.READY);
             assessmentRepository.save(assessment);
+            
+            log.info("Assessment {} successfully marked as READY.", assessmentId);
 
         } catch (Exception e) {
-            log.error("Generation failed: {}", e.getMessage());
+            // Enhanced logging with the full stack trace to catch parsing errors
+            log.error("Generation failed for ID {}: {}", assessmentId, e.getMessage(), e);
             assessment.setStatus(Assessment.AssessmentStatus.FAILED);
             assessmentRepository.save(assessment);
         }
     }
 
+    @Transactional
+    public void saveResults(Long id, String content) {
+        Assessment assessment = assessmentRepository.findById(id).get();
+        assessment.setContent(content);
+        assessment.setStatus(Assessment.AssessmentStatus.READY);
+        assessmentRepository.save(assessment);
+    }
+
+    @Transactional
+    public void updateStatusToFailed(Long id) {
+        assessmentRepository.findById(id).ifPresent(a -> {
+            a.setStatus(Assessment.AssessmentStatus.FAILED);
+            assessmentRepository.save(a);
+        });
+    }
 }
