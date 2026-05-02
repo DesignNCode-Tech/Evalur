@@ -8,8 +8,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 
@@ -58,5 +60,14 @@ public class AiConfig {
         executor.setThreadNamePrefix("AiIngest-");
         executor.initialize();
         return executor;
+    }
+
+    @Bean
+    public GoogleAiGeminiChatModel chatModel() {
+        return GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName("gemini-3-flash-preview") // Your confirmed model
+                .responseFormat(ResponseFormat.JSON)
+                .build();
     }
 }

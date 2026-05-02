@@ -127,6 +127,8 @@
 			<artifactId>langchain4j-core</artifactId>
 			<version>0.35.0</version>
 		</dependency>
+
+		
 	</dependencies>
 
 	<build>
