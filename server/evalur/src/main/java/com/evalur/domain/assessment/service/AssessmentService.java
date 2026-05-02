@@ -25,14 +25,13 @@ public class AssessmentService {
 
     @Async("taskExecutor")
     public void runGenerationPipeline(Long assessmentId, List<String> documentIds, String jobDescription) {
-        // 1. Fetch a "fresh" copy of the assessment inside this thread
         Assessment assessment = assessmentRepository.findById(assessmentId)
                 .orElseThrow(() -> new RuntimeException("Assessment not found for ID: " + assessmentId));
 
         try {
             log.info("Starting generation for Assessment ID: {}", assessmentId);
 
-            // 2. Get Context from PDFs
+            // 1. Get Context from PDFs
             String pdfContext = "";
             if (documentIds != null && !documentIds.isEmpty()) {
                 pdfContext = retrievalService.getRelevantContext(
@@ -42,18 +41,19 @@ public class AssessmentService {
                 );
             }
 
-            // 3. Generate JSON using BOTH sources
+            // 2. Generate JSON using BOTH sources
+            // Added '0' as the regenerationCount for the initial run
             String jsonContent = aiGenerationService.generateAssessmentJson(
                     assessment.getRole(),
                     assessment.getSeniority(),
                     pdfContext,
-                    jobDescription
+                    jobDescription,
+                    0 
             );
 
-            // 4. Log the length to verify we received the data shown in your chart
             log.info("Gemini returned {} characters of JSON content.", jsonContent.length());
 
-            // 5. Update and Save
+            // 3. Update and Save
             assessment.setContent(jsonContent);
             assessment.setStatus(Assessment.AssessmentStatus.READY);
             assessmentRepository.save(assessment);
@@ -61,7 +61,6 @@ public class AssessmentService {
             log.info("Assessment {} successfully marked as READY.", assessmentId);
 
         } catch (Exception e) {
-            // Enhanced logging with the full stack trace to catch parsing errors
             log.error("Generation failed for ID {}: {}", assessmentId, e.getMessage(), e);
             assessment.setStatus(Assessment.AssessmentStatus.FAILED);
             assessmentRepository.save(assessment);
@@ -70,7 +69,8 @@ public class AssessmentService {
 
     @Transactional
     public void saveResults(Long id, String content) {
-        Assessment assessment = assessmentRepository.findById(id).get();
+        Assessment assessment = assessmentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Assessment not found"));
         assessment.setContent(content);
         assessment.setStatus(Assessment.AssessmentStatus.READY);
         assessmentRepository.save(assessment);
