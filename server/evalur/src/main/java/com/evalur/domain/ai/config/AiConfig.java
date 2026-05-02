@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.request.ResponseFormat;
@@ -69,11 +70,16 @@ public class AiConfig {
     public GoogleAiGeminiChatModel chatModel() {
         return GoogleAiGeminiChatModel.builder()
                 .apiKey(geminiApiKey)
-                .modelName("gemini-3-flash") // Your confirmed model
+                .modelName("gemini-2.5-flash") // Your confirmed model
                 .responseFormat(ResponseFormat.JSON)
                 .maxOutputTokens(8192)
                 // INCREASE THIS: Give it 3 minutes to handle large JSON payloads
                 .timeout(java.time.Duration.ofSeconds(180)) // Explicitly 180 seconds
                 .build();
+    }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
     }
 }
