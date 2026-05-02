@@ -1,7 +1,5 @@
 package com.evalur.domain.ai.config;
 
-
-// TextSegment is now here:
 import java.util.concurrent.Executor; 
 
 import org.springframework.beans.factory.annotation.Value;
@@ -21,7 +19,7 @@ public class AiConfig {
     @Value("${evalur.ai.google-gemini.api-key}")
     private String geminiApiKey;
 
-    @Value("${spring.db.url.raw}")
+    @Value("${spring.db.host}") 
     private String dbHost;
 
     @Value("${spring.datasource.username}")
@@ -34,7 +32,7 @@ public class AiConfig {
     public EmbeddingModel embeddingModel() {
         return GoogleAiEmbeddingModel.builder()
             .apiKey(geminiApiKey)
-            .modelName("text-embedding-004")
+            .modelName("gemini-embedding-001") 
             .build();
     }
 
@@ -47,7 +45,7 @@ public class AiConfig {
             .user(dbUser)
             .password(dbPassword)
             .table("ai_document_chunks")
-            .dimension(768) // Matches Gemini's output
+            .dimension(768) // Matches gemini-embedding-001
             .build();
     }
 

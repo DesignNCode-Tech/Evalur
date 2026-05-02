@@ -2,7 +2,6 @@ package com.evalur.domain.ai.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +16,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.evalur.domain.ai.entity.AiDocument;
+import com.evalur.domain.ai.repository.AiDocumentRepository;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -34,31 +36,40 @@ public class AiDocumentService {
     @Value("${evalur.ai.llamaparse.api-key}")
     private String llamaApiKey;
 
-    // Use: https://api.cloud.llamaindex.ai/api/v1/parsing/upload
-    @Value("${evalur.ai.llamaparse.base-url}")
-    private String llamaUploadUrl;
+    @Value("${evalur.ai.llamaparse.base-url}") 
+    private String llamaBaseUrl;
 
+    private final AiDocumentRepository aiDocumentRepository;
     private final EmbeddingModel embeddingModel;
     private final EmbeddingStore<TextSegment> embeddingStore;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @Async("taskExecutor")
-    public void initiateIngestionPipeline(MultipartFile file, Long orgId, UUID documentId) {
+    public void initiateIngestionPipeline(MultipartFile file, AiDocument aiDoc) {
         try {
-            log.info("Starting background ingestion | Org: {} | Doc: {}", orgId, documentId);
-            
-            // 1. Direct upload to your tested endpoint
+            // STEP 1: PARSING[cite: 1]
+            updateStatus(aiDoc, AiDocument.IngestionStatus.PARSING);
             String jobId = uploadToLlamaParse(file);
+            aiDoc.setLlamaJobId(jobId);
+            aiDocumentRepository.save(aiDoc);
             
-            // 2. Poll for the specific markdown result
             String markdown = pollForResults(jobId);
 
-            if (markdown != null && !markdown.isBlank()) {
-                processAndStore(markdown, orgId, documentId);
-                log.info("Ingestion Success | Document: {} is now vectorized in Neon.", documentId);
+            if (markdown != null) {
+                // STEP 2: VECTORIZING[cite: 1]
+                updateStatus(aiDoc, AiDocument.IngestionStatus.VECTORIZING);
+                processAndStore(markdown, aiDoc);
+                
+                // STEP 3: COMPLETED[cite: 1]
+                updateStatus(aiDoc, AiDocument.IngestionStatus.COMPLETED);
+            } else {
+                throw new RuntimeException("LlamaParse timeout.");
             }
         } catch (Exception e) {
-            log.error("Critical Ingestion Failure | Doc: {} | Error: {}", documentId, e.getMessage());
+            log.error("Pipeline failed: {}", e.getMessage());
+            aiDoc.setStatus(AiDocument.IngestionStatus.FAILED);
+            aiDoc.setErrorMessage(e.getMessage());
+            aiDocumentRepository.save(aiDoc);
         }
     }
 
@@ -66,55 +77,46 @@ public class AiDocumentService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
         headers.setBearerAuth(llamaApiKey);
-
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("file", file.getResource());
-
-        // Use the exact URL injected from your properties
-        ResponseEntity<Map> response = restTemplate.postForEntity(llamaUploadUrl, new HttpEntity<>(body, headers), Map.class);
-        
-        if (response.getBody() == null || response.getBody().get("id") == null) {
-            throw new RuntimeException("Failed to retrieve Job ID from LlamaParse upload.");
-        }
-        
+        String url = llamaBaseUrl + "/parsing/upload"; 
+        ResponseEntity<Map> response = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), Map.class);
         return response.getBody().get("id").toString();
     }
 
     private String pollForResults(String jobId) throws InterruptedException {
-        // Construct the result URL based on the LlamaIndex API structure
-        // Replacing '/upload' with '/job/{jobId}/result/markdown'
-        String pollUrl = llamaUploadUrl.replace("/upload", "/job/" + jobId + "/result/markdown");
-
+        String pollUrl = llamaBaseUrl + "/parsing/job/" + jobId + "/result/markdown";
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(llamaApiKey);
-
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 30; i++) {
             TimeUnit.SECONDS.sleep(10);
             try {
                 ResponseEntity<Map> resp = restTemplate.exchange(pollUrl, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
                 if (resp.getStatusCode().is2xxSuccessful() && resp.getBody() != null) {
                     return (String) resp.getBody().get("markdown");
                 }
-            } catch (Exception e) {
-                log.debug("Polling Job {}: Processing still in progress...", jobId);
-            }
+            } catch (Exception e) { log.debug("Polling..."); }
         }
         return null;
     }
 
-    private void processAndStore(String markdown, Long orgId, UUID documentId) {
+    private void processAndStore(String markdown, AiDocument aiDoc) {
         Document document = Document.from(markdown);
-        
-        // Split 1000 chars with 100 overlap (LangChain4j 0.35.0)
+        // Chunking the doc into 1000 character pieces[cite: 1]
         List<TextSegment> segments = DocumentSplitters.recursive(1000, 100).split(document);
 
-        // Multi-tenant hierarchical metadata tagging
+        // Tagging each chunk with the Organization and Document ID[cite: 1]
         segments.forEach(segment -> {
-            segment.metadata().add("orgId", orgId);
-            segment.metadata().add("documentId", documentId.toString());
+            segment.metadata().add("orgId", aiDoc.getOrganization().getId());
+            segment.metadata().add("documentId", aiDoc.getId().toString());
         });
 
-        // Batch embed and persist to Neon DB
+        // Embedding (Vectorizing) and saving to Neon[cite: 1]
         embeddingStore.addAll(embeddingModel.embedAll(segments).content(), segments);
+    }
+
+    private void updateStatus(AiDocument doc, AiDocument.IngestionStatus status) {
+        doc.setStatus(status);
+        aiDocumentRepository.save(doc);
     }
 }
