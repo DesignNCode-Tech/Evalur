@@ -1,17 +1,22 @@
 package com.evalur.domain.ai.controller;
 
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.evalur.common.ApiResponse;
+import com.evalur.domain.ai.entity.AiDocument;
+import com.evalur.domain.ai.repository.AiDocumentRepository;
 import com.evalur.domain.ai.service.AiDocumentService;
+import com.evalur.domain.user.entity.User;
+import com.evalur.security.utils.SecurityUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,23 +26,34 @@ import lombok.RequiredArgsConstructor;
 public class AiDocumentController {
 
     private final AiDocumentService aiDocumentService;
+    private final AiDocumentRepository aiDocumentRepository;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadDocument(@RequestParam("file") MultipartFile file) {
-        // Extracting orgId from the SecurityContext (populated by your JWT/Bearer filter)
-        // Adjust the cast below to match your specific Principal/UserDetails class
-        Long orgId = (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials(); 
+    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadDocument(@RequestParam("file") MultipartFile file) {
+        User currentUser = SecurityUtils.getCurrentUser(); // Gets the logged-in manager
         
-        // If your filter puts the ID in the Principal object, use:
-        // Long orgId = ((UserPrincipal) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getOrgId();
+        // Save the doc as PENDING so it shows up in the dashboard immediately
+        AiDocument aiDoc = AiDocument.builder()
+                .filename(file.getOriginalFilename())
+                .organization(currentUser.getOrganization())
+                .status(AiDocument.IngestionStatus.PENDING)
+                .build();
+        
+        aiDoc = aiDocumentRepository.save(aiDoc);
 
-        String jobId = aiDocumentService.processAndExtract(file, orgId);
-        return ResponseEntity.ok("Ingestion started. Job ID: " + jobId);
+        // Start the background work
+        aiDocumentService.initiateIngestionPipeline(file, aiDoc);
+
+        return ResponseEntity.accepted().body(ApiResponse.success(
+            Map.of("documentId", aiDoc.getId(), "status", "PENDING"),
+            "Processing started."
+        ));
     }
 
-    @GetMapping("/status/{jobId}")
-     public ResponseEntity<String> getStatus(@PathVariable String jobId) {
-    String result = aiDocumentService.getParsedResult(jobId);
-    return ResponseEntity.ok(result);
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AiDocument>>> getOrgDocuments() {
+        Long orgId = SecurityUtils.getCurrentOrgId(); // Only show docs for THIS organization[cite: 1]
+        List<AiDocument> docs = aiDocumentRepository.findByOrganizationIdOrderByCreatedAtDesc(orgId);
+        return ResponseEntity.ok(ApiResponse.success(docs, "Library retrieved."));
     }
 }
