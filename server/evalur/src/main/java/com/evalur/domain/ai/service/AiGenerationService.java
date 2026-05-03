@@ -20,22 +20,23 @@ import reactor.util.retry.Retry;
 @Slf4j
 public class AiGenerationService {
 
-    @Value("${evalur.ai.google-gemini.api-key}")
-    private String apiKey;
-
+    private final String apiKey;
+    private final String model;
     private final WebClient webClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-    private static final String MODEL = "models/gemini-2.5-flash";
-
-    public AiGenerationService(WebClient.Builder webClientBuilder) {
-        this.webClient = webClientBuilder.baseUrl(BASE_URL).build();
+    // Use constructor injection for @Value to avoid null pointer issues during WebClient initialization
+    public AiGenerationService(
+            WebClient.Builder webClientBuilder,
+            @Value("${evalur.ai.google-gemini.api-key}") String apiKey,
+            @Value("${evalur.ai.google-gemini.base.url}") String baseUrl,
+            @Value("${evalur.ai.google-gemini.model}") String model
+    ) {
+        this.apiKey = apiKey;
+        this.model = model;
+        this.webClient = webClientBuilder.baseUrl(baseUrl).build();
     }
 
-    /**
-     * Generates a structured JSON assessment with RAG context and regeneration awareness.
-     */
     public String generateAssessmentJson(
             String role,
             String seniority,
@@ -43,226 +44,155 @@ public class AiGenerationService {
             String jobDescription,
             int regenerationCount
     ) {
+        // Dynamic counts based on seniority
+        int targetMcqs = calculateMcqCount(seniority);
+        int targetCodingTasks = calculateCodingCount(seniority);
 
-        // Deterministic for first attempt (0.2), more creative for regenerations (0.4)
         double temperature = (regenerationCount == 0) ? 0.2 : 0.4;
-
-        String prompt = constructPrompt(role, seniority, context, jobDescription, regenerationCount);
+        String prompt = constructPrompt(role, seniority, context, jobDescription, regenerationCount, targetMcqs, targetCodingTasks);
 
         Map<String, Object> requestBody = Map.of(
-                "contents", List.of(
-                        Map.of(
-                                "role", "user",
-                                "parts", List.of(Map.of("text", prompt))
-                        )
-                ),
+                "contents", List.of(Map.of(
+                        "role", "user",
+                        "parts", List.of(Map.of("text", prompt))
+                )),
                 "generationConfig", Map.of(
                         "temperature", temperature,
                         "responseMimeType", "application/json"
                 )
         );
 
-        log.info("Calling Gemini model: {} | temp={} | regen={}", MODEL, temperature, regenerationCount);
+        log.info("Generating Assessment: {} | {} MCQs | {} Coding | Temp: {}", 
+                 role, targetMcqs, targetCodingTasks, temperature);
 
         try {
             String response = webClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/" + MODEL + ":generateContent")
+                            .path("/" + model + ":generateContent")
                             .queryParam("key", apiKey)
                             .build()
                     )
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(Duration.ofSeconds(60)) 
                     .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)))
                     .block();
 
-            String extracted = extractText(response);
-            String cleanJson = sanitizeJson(extracted);
-
-            JsonNode root = objectMapper.readTree(cleanJson);
-
-            // Apply normalization (truncating extras) and strict validation
-            root = normalize(root);
-            validateJson(root);
+            JsonNode root = objectMapper.readTree(sanitizeJson(extractText(response)));
+            
+            // Normalize to enforce dynamic limits and validate structure
+            root = normalize(root, targetMcqs, targetCodingTasks);
+            validateJson(root, targetMcqs, targetCodingTasks);
 
             return objectMapper.writeValueAsString(root);
 
         } catch (Exception e) {
-            log.error("Gemini generation failed: {}", e.getMessage(), e);
+            log.error("Gemini generation failed for role {}: {}", role, e.getMessage());
             throw new RuntimeException("Gemini generation failed", e);
         }
     }
 
-    private String extractText(String response) {
-        try {
-            JsonNode root = objectMapper.readTree(response);
+    private int calculateMcqCount(String seniority) {
+        if (seniority == null) return 5;
+        return switch (seniority.toLowerCase()) {
+            case "junior", "entry" -> 5;
+            case "mid", "intermediate" -> 10;
+            case "senior", "lead", "architect" -> 15;
+            default -> 8;
+        };
+    }
 
-            JsonNode candidates = root.path("candidates");
-            if (!candidates.isArray() || candidates.isEmpty()) {
-                throw new RuntimeException("No candidates in response");
-            }
+    private int calculateCodingCount(String seniority) {
+        if (seniority == null) return 1;
+        return (seniority.toLowerCase().contains("senior") || seniority.toLowerCase().contains("architect")) ? 2 : 1;
+    }
 
-            JsonNode parts = candidates.get(0)
-                    .path("content")
-                    .path("parts");
-
-            if (!parts.isArray() || parts.isEmpty()) {
-                throw new RuntimeException("No parts in response");
-            }
-
-            String text = parts.get(0).path("text").asText();
-
-            if (text == null || text.isBlank()) {
-                throw new RuntimeException("Empty Gemini response text");
-            }
-
-            return text.trim();
-
-        } catch (Exception e) {
-            log.error("Extraction failed: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to extract Gemini response", e);
-        }
+    private String extractText(String response) throws Exception {
+        JsonNode root = objectMapper.readTree(response);
+        return root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText();
     }
 
     private String sanitizeJson(String raw) {
-        if (raw == null || raw.isBlank()) {
-            throw new RuntimeException("Empty response from Gemini");
-        }
-
         String trimmed = raw.trim();
-
-        // Strip markdown code blocks (```json ... ```) if present
         if (trimmed.startsWith("```")) {
             int firstNewline = trimmed.indexOf("\n");
             int lastBackticks = trimmed.lastIndexOf("```");
-
             if (firstNewline > 0 && lastBackticks > firstNewline) {
                 return trimmed.substring(firstNewline, lastBackticks).trim();
             }
         }
-
         return trimmed;
     }
 
-    /**
-     * Normalizes the output to ensure exact quantities without failing the request.
-     */
-    private JsonNode normalize(JsonNode root) {
+    private JsonNode normalize(JsonNode root, int mcqLimit, int codingLimit) {
         if (!(root instanceof ObjectNode objectNode)) return root;
 
-        // Ensure exactly 3 MCQs
         if (objectNode.has("mcqs") && objectNode.get("mcqs").isArray()) {
             ArrayNode mcqs = (ArrayNode) objectNode.get("mcqs");
-            while (mcqs.size() > 3) {
-                mcqs.remove(3); 
-            }
+            while (mcqs.size() > mcqLimit) mcqs.remove(mcqLimit);
         }
 
-        // Ensure exactly 1 Coding Task
         if (objectNode.has("codingTasks") && objectNode.get("codingTasks").isArray()) {
             ArrayNode coding = (ArrayNode) objectNode.get("codingTasks");
-            while (coding.size() > 1) {
-                coding.remove(1);
-            }
+            while (coding.size() > codingLimit) coding.remove(codingLimit);
         }
-
         return objectNode;
     }
 
-    private void validateJson(JsonNode root) {
-        if (!root.has("mcqs") || !root.get("mcqs").isArray() || root.get("mcqs").isEmpty()) {
-            throw new RuntimeException("Missing or empty mcqs array");
-        }
-
-        if (!root.has("codingTasks") || !root.get("codingTasks").isArray() || root.get("codingTasks").isEmpty()) {
-            throw new RuntimeException("Missing or empty codingTasks array");
-        }
-
-        if (root.get("mcqs").size() != 3) {
-            throw new RuntimeException("Validation failed: Expected exactly 3 MCQs");
-        }
-
-        root.get("mcqs").forEach(mcq -> {
-            if (!mcq.has("question") || !mcq.has("options") || 
-                !mcq.has("correctOptionIndex") || !mcq.has("explanation")) {
-                throw new RuntimeException("Invalid MCQ structure detected");
-            }
-
-            if (mcq.get("options").size() != 4) {
-                throw new RuntimeException("MCQ must have exactly 4 options");
-            }
-
-            int idx = mcq.get("correctOptionIndex").asInt(-1);
-            if (idx < 0 || idx > 3) {
-                throw new RuntimeException("correctOptionIndex must be an integer between 0 and 3");
-            }
-        });
-
-        if (root.get("codingTasks").size() != 1) {
-            throw new RuntimeException("Validation failed: Expected exactly 1 coding task");
+    private void validateJson(JsonNode root, int mcqLimit, int codingLimit) {
+        if (root.path("mcqs").size() != mcqLimit || root.path("codingTasks").size() != codingLimit) {
+            throw new RuntimeException("Incomplete assessment generated: " + 
+                                       root.path("mcqs").size() + " MCQs, " + 
+                                       root.path("codingTasks").size() + " Tasks.");
         }
     }
 
-    private String constructPrompt(
-            String role,
-            String seniority,
-            String context,
-            String jobDescription,
-            int regenerationCount
-    ) {
-
-        String variationHint = (regenerationCount > 0)
-                ? "\nIMPORTANT: This is a regeneration request. Provide a DIFFERENT set of questions to ensure variety.\n"
-                : "";
-
+    private String constructPrompt(String role, String seniority, String context, String jd, int regen, int mcqs, int tasks) {
+        String variation = (regen > 0) ? "This is a REGENERATION. Focus on different sub-topics and deeper edge cases." : "";
+        
         return String.format("""
-                You are an expert technical recruiter. Generate a high-quality technical assessment.
+            Act as a Lead Technical Interviewer. Generate a professional assessment for:
+            - ROLE: %s
+            - SENIORITY: %s
+            
+            CONTEXTUAL SOURCES:
+            1. JOB DESCRIPTION: %s
+            2. TECHNICAL MANUALS: %s
+            
+            %s
+            
+            GOAL:
+            Provide EXACTLY %d Multiple Choice Questions (MCQs) and %d Coding Tasks.
+            
+            STRICT RULES:
+            - Use the 'Technical Manuals' to ensure accuracy of questions.
+            - Assign a 'timeEstimateMinutes' for EVERY item based on complexity.
+            - MCQs: Usually 1-2 minutes.
+            - Coding: Usually 20-45 minutes.
+            - Provide a 'difficulty' tag for every item (Easy, Medium, Hard) relative to the seniority.
+            - Return ONLY raw JSON.
 
-                ROLE: %s
-                SENIORITY: %s
-
-                JOB DESCRIPTION:
-                %s
-
-                TECHNICAL CONTEXT:
-                %s
-
-                %s
-
-                TASK:
-                Generate exactly 3 MCQs and 1 Coding Task.
-
-                STRICT REQUIREMENTS:
-                - Return ONLY valid JSON.
-                - Each MCQ must have exactly 4 options.
-                - correctOptionIndex must be 0-3.
-                - No conversational text or markdown wrappers.
-
-                SCHEMA:
-                {
-                  "mcqs": [
-                    {
-                      "question": "",
-                      "options": ["", "", "", ""],
-                      "correctOptionIndex": 0,
-                      "explanation": ""
-                    }
-                  ],
-                  "codingTasks": [
-                    {
-                      "title": "",
-                      "description": "",
-                      "constraints": "",
-                      "initialCode": "",
-                      "solutionTemplate": ""
-                    }
-                  ]
-                }
-                """, role, seniority, 
-                (jobDescription != null ? jobDescription : "N/A"), 
-                (context != null ? context : "N/A"),
-                variationHint);
+            JSON SCHEMA:
+            {
+              "mcqs": [{
+                "question": "",
+                "options": ["", "", "", ""],
+                "correctOptionIndex": 0,
+                "explanation": "",
+                "difficulty": "Medium",
+                "timeEstimateMinutes": 2
+              }],
+              "codingTasks": [{
+                "title": "",
+                "description": "",
+                "constraints": "",
+                "initialCode": "",
+                "solutionTemplate": "",
+                "difficulty": "Hard",
+                "timeEstimateMinutes": 35
+              }]
+            }
+            """, role, seniority, (jd != null ? jd : "N/A"), (context != null ? context : "N/A"), variation, mcqs, tasks);
     }
 }
