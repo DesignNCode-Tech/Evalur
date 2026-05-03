@@ -5,15 +5,20 @@ import java.util.concurrent.Executor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiEmbeddingModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 
 @Configuration
+@EnableAsync
 public class AiConfig {
 
     @Value("${evalur.ai.google-gemini.api-key}")
@@ -33,6 +38,7 @@ public class AiConfig {
         return GoogleAiEmbeddingModel.builder()
                 .apiKey(geminiApiKey)
                 .modelName("gemini-embedding-001")
+                .timeout(java.time.Duration.ofSeconds(60)) 
                 .build();
     }
 
@@ -58,5 +64,22 @@ public class AiConfig {
         executor.setThreadNamePrefix("AiIngest-");
         executor.initialize();
         return executor;
+    }
+
+    @Bean
+    public GoogleAiGeminiChatModel chatModel() {
+        return GoogleAiGeminiChatModel.builder()
+                .apiKey(geminiApiKey)
+                .modelName("gemini-2.5-flash") // Your confirmed model
+                .responseFormat(ResponseFormat.JSON)
+                .maxOutputTokens(8192)
+                // INCREASE THIS: Give it 3 minutes to handle large JSON payloads
+                .timeout(java.time.Duration.ofSeconds(180)) // Explicitly 180 seconds
+                .build();
+    }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
     }
 }

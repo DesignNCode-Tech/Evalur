@@ -29,27 +29,29 @@ public class AiDocumentController {
     private final AiDocumentRepository aiDocumentRepository;
 
     @PostMapping("/upload")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> uploadDocument(@RequestParam("file") MultipartFile file) {
-        User currentUser = SecurityUtils.getCurrentUser(); // Gets the logged-in manager
-        
-        // Save the doc as PENDING so it shows up in the dashboard immediately
-        AiDocument aiDoc = AiDocument.builder()
-                .filename(file.getOriginalFilename())
-                .organization(currentUser.getOrganization())
-                .status(AiDocument.IngestionStatus.PENDING)
-                .build();
-        
-        aiDoc = aiDocumentRepository.save(aiDoc);
+public ResponseEntity<ApiResponse<Map<String, Object>>> uploadDocument(@RequestParam("file") MultipartFile file) throws java.io.IOException {
+    User currentUser = SecurityUtils.getCurrentUser();
+    
+    // 1. Read bytes immediately while the request thread is alive
+    byte[] fileBytes = file.getBytes();
+    String fileName = file.getOriginalFilename();
+    
+    AiDocument aiDoc = AiDocument.builder()
+            .filename(fileName)
+            .organization(currentUser.getOrganization())
+            .status(AiDocument.IngestionStatus.PENDING)
+            .build();
+    
+    aiDoc = aiDocumentRepository.save(aiDoc);
 
-        // Start the background work
-        aiDocumentService.initiateIngestionPipeline(file, aiDoc);
+    // 2. Pass the byte array and filename, not the MultipartFile object
+    aiDocumentService.initiateIngestionPipeline(fileBytes, fileName, aiDoc);
 
-        return ResponseEntity.accepted().body(ApiResponse.success(
-            Map.of("documentId", aiDoc.getId(), "status", "PENDING"),
-            "Processing started."
-        ));
-    }
-
+    return ResponseEntity.accepted().body(ApiResponse.success(
+        Map.of("documentId", aiDoc.getId(), "status", "PENDING"),
+        "Processing started."
+    ));
+}
     @GetMapping
     public ResponseEntity<ApiResponse<List<AiDocument>>> getOrgDocuments() {
         Long orgId = SecurityUtils.getCurrentOrgId(); // Only show docs for THIS organization[cite: 1]
