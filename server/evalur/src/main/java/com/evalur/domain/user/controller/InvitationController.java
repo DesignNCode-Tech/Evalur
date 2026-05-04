@@ -56,7 +56,7 @@ public class InvitationController {
             request.seniorityLevel()
         );
 
-        String inviteLink = clientUrl + "/register/join?token=" + inviteToken;
+        String inviteLink = clientUrl + "/auth/register/join?token=" + inviteToken;
 
         return ResponseEntity.ok(Map.of(
             "message", "Invite link generated successfully",

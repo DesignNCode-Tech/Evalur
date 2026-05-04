@@ -1,6 +1,6 @@
 import api from "@/api/axios"; // Adjust this path to where your axios file is saved
 
-// Interfaces for request payloads
+
 export interface AssessmentRequest {
   title: string;
   role: string;
@@ -10,58 +10,89 @@ export interface AssessmentRequest {
 }
 
 export interface AssignmentRequest {
-  assessmentId: string | number;
-  candidateIds: (string | number)[];
+  assessmentId: number;
+  candidateIds: number[];
+}
+
+// ❗ Interface for submitting answers
+export interface SubmissionRequest {
+  assessmentId: number;
+  answers: any; // Update with your specific MCQ/Code answer structure
 }
 
 const assessmentService = {
-  /**
-   * MANAGER ENDPOINTS
-   */
-
-  // Get list of all assessments for the organization (Summary View)
+  // --- EXISTING MANAGER METHODS ---
   getAssessments: async () => {
     const response = await api.get("/assessments");
     return response.data.data;
   },
 
-  // Trigger the AI Generation Pipeline
   generateAssessment: async (payload: AssessmentRequest) => {
     const response = await api.post("/assessments/generate", payload);
     return response.data;
   },
 
-  // Get the library of uploaded PDFs to populate the selection dropdown
   getLibraryDocuments: async () => {
     const response = await api.get("/ai/docs");
     return response.data.data;
   },
 
-  // Assign a specific assessment to one or more candidates
   assignAssessment: async (payload: AssignmentRequest) => {
     const response = await api.post("/user-assessments/assign", payload);
     return response.data;
   },
 
-  // Get organization members to find candidates for assignment
-  getOrgMembers: async () => {
-    const response = await api.get("/users/org-members");
+  getCompleteAssessments: async () => {
+    const response = await api.get("/assessments/get-complete-assessments");
     return response.data.data;
   },
 
-  /**
-   * CANDIDATE ENDPOINTS
-   */
+  // // 3. GET KNOWLEDGE BASE DOCS
+  // getLibraryDocuments: async () => {
+  //   const response = await api.get("/ai/docs");
+  //   return response.data.data;
+  // },
 
-  // Get assessments assigned specifically to the logged-in candidate
-  getMyTasks: async () => {
-    const response = await api.get("/user-assessments/my-tasks");
+  // 4. UPLOAD/INGEST NEW KNOWLEDGE
+  uploadDocument: async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await api.post("/ai/docs/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
+
+  
+
+  // assessmentApi.ts
+getOrgMembers: async () => {
+  const response = await api.get("/org/members");
+  // Reach into the nested data if your Spring Boot uses a wrapper
+  return response.data.data || response.data; 
+},
+
+  // --- ❗ ADD THESE MISSING METHODS ---
+
+  // Fetches full assessment details (questions) for the candidate
+  getAssessment: async (id: string | number) => {
+    const response = await api.get(`/assessments/${id}`);
     return response.data.data;
   },
 
-  // Unlock and fetch the actual test content (JSON) to start the exam
-  startTest: async (assignmentId: string | number) => {
-    const response = await api.get(`/user-assessments/${assignmentId}/start`);
+  // Submits the candidate's answers
+  submitAssessment: async (payload: SubmissionRequest) => {
+    const response = await api.post("/user-assessments/submit", payload);
+    return response.data;
+  },
+
+  // Fetches the AI-generated result/feedback for a completed test
+  getAssessmentResult: async (id: string | number) => {
+    const response = await api.get(`/user-assessments/results/${id}`);
     return response.data.data;
   }
 };

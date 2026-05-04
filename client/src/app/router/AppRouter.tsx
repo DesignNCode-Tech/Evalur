@@ -10,8 +10,13 @@ import KnowledgePage from '@/feature/dashboard/pages/AdminPages/KnowledgePage';
 import AssessmentPage from '@/feature/dashboard/pages/AdminPages/AssessmentPage';
 import CandidatesPage from '@/feature/dashboard/pages/AdminPages/CandidatesPage';
 import SettingsPage from '@/feature/dashboard/pages/AdminPages/SettingsPage';
+
+// import AssessmentPlayer from '@/feature/dashboard/pages/candidatePages/AssessmentPlayer';
+// import AssessmentResult from '@/feature/dashboard/pages/candidatePages/AssessmentResult';
+
 import UnauthorizedPage from '@/common/pages/UnauthorizedPage';
 import RoleRedirect from './RoleRedirect';
+import ViewAssessmentPage from '@/feature/dashboard/pages/AdminPages/ViewAssessmentPage';
 
 export const AppRouter = () => {
   return (
@@ -39,6 +44,7 @@ export const AppRouter = () => {
           <Route path="/admin/assessments" element={<AssessmentPage />} />
           <Route path="/admin/candidates" element={<CandidatesPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
+          <Route path="/admin/assessments/view/:id" element={<ViewAssessmentPage />} />
 
         </Route>
       </Route>
@@ -61,6 +67,8 @@ export const AppRouter = () => {
       <Route element={<ProtectedRoute allowedRoles={["CANDIDATE"]} />}>
         <Route element={<MainLayout />}>
           <Route path="/candidate" element={<DashboardPage />} />
+          {/* <Route path="/assessment/:id" element={< AssessmentPlayer/>} />
+          <Route path="/assessment/result/:id" element={<AssessmentResult />} /> */}
         </Route>
       </Route>
 
