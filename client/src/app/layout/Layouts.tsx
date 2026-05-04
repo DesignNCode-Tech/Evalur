@@ -44,11 +44,8 @@ const MainLayout = () => {
 
         </div>
       </div>
-      </SidebarProvider>
-      
-      
-     </ThemeProvider>
-     
+    </SidebarProvider>
+    </ThemeProvider>
   );
 };
 
