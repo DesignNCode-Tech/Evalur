@@ -1,49 +1,227 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { useAuth } from "@/app/providers/AuthContext";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+type UserRole = "ADMIN" | "MANAGER" | "STAFF" | "CANDIDATE";
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { logout } = useAuth(); // 👈 Get the logout function from context
 
-  const handleLogout = () => {
-    // 1. Call the global logout (clears state + storage)
-    logout();
+  const role = user?.role?.toUpperCase() as UserRole | undefined;
 
-    // 2. Show feedback
-    toast.success("Logged out successfully");
+  if (!role) {
+    return <div className="p-6">Loading...</div>;
+  }
 
-    // 3. Force navigation to the auth entry point
-    navigate("/auth/login", { replace: true });
+  const isAdmin = role === "ADMIN";
+  const isManager = role === "MANAGER";
+  const isStaff = role === "STAFF";
+  const isCandidate = role === "CANDIDATE";
+
+  // ✅ STATE
+  const [assessments, setAssessments] = useState<any[]>([]);
+
+  // ✅ FETCH
+  const fetchAssessments = async () => {
+    try {
+      const res = await fetch("/api/candidate/assessments");
+      const data = await res.json();
+      setAssessments(data);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  // ✅ EFFECT (AFTER role is defined)
+  useEffect(() => {
+    if (isCandidate) {
+      fetchAssessments();
+    }
+  }, [isCandidate]);
+
+  // ✅ ACTION
+  const handleAction = (a: any) => {
+    if (a.status === "PENDING") {
+      navigate(`/assessment/${a.id}`);
+    } else if (a.status === "IN_PROGRESS") {
+      navigate(`/assessment/${a.id}`);
+    } else {
+      navigate(`/assessment/result/${a.id}`);
+    }
+  };
+
+  const stats = {
+    totalAssessments: 0,
+    activeCandidates: 0,
+    pendingAssessments: 0,
+    completedAssessments: 0,
+    averageScore: 0,
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <header className="flex justify-between items-center mb-8 border-b pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-          <p className="text-sm text-slate-500">Manage your organizational hiring context</p>
+    <div className="min-h-screen bg-slate-50">
+      <main className="container mx-auto p-6">
+
+        {/* HEADER */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-slate-900">
+            {isAdmin
+              ? "Organization Dashboard"
+              : isManager
+              ? "Manager Dashboard"
+              : isStaff
+              ? "Staff Dashboard"
+              : "Candidate Dashboard"}
+          </h2>
+
+          <p className="text-slate-600 mt-1">
+            {isAdmin
+              ? "Manage company knowledge, create assessments, and evaluate candidates"
+              : isManager
+              ? "Track your team's assessment progress"
+              : isStaff
+              ? "Manage internal tasks"
+              : "View your assigned assessments"}
+          </p>
         </div>
 
-        {/* TEMPORARY LOGOUT BUTTON */}
-      <Button onClick={handleLogout} variant="destructive">
-      Logout
-    </Button>
-      </header>
+        {/* ADMIN */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Total Assessments</p>
+              <p className="text-2xl font-bold">{stats.totalAssessments}</p>
+            </div>
 
-      <main>
-        {/* Your dashboard content goes here */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="h-32 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center">
-            <span className="text-slate-400">Total Assessments: 0</span>
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Active Candidates</p>
+              <p className="text-2xl font-bold">{stats.activeCandidates}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Tenant Status</p>
+              <p className="text-green-600 text-2xl font-bold">Active</p>
+            </div>
           </div>
-          <div className="h-32 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center">
-            <span className="text-slate-400">Active Candidates: 0</span>
+        )}
+
+        {/* MANAGER */}
+        {isManager && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Total</p>
+              <p className="text-2xl">{stats.totalAssessments}</p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Pending</p>
+              <p className="text-yellow-600 text-2xl">
+                {stats.pendingAssessments}
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Completed</p>
+              <p className="text-green-600 text-2xl">
+                {stats.completedAssessments}
+              </p>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border">
+              <p>Avg Score</p>
+              <p className="text-purple-600 text-2xl">
+                {stats.averageScore}%
+              </p>
+            </div>
           </div>
-          <div className="h-32 bg-white rounded-xl shadow-sm border border-slate-200 flex items-center justify-center">
-            <span className="text-slate-400">Tenant Status: Active</span>
-          </div>
-        </div>
+        )}
+
+        {/* STAFF */}
+        {isStaff && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Staff Panel</CardTitle>
+              <CardDescription>
+                Manage daily operations
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <p>No tasks assigned yet</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* CANDIDATE */}
+        {isCandidate && (
+          <Card>
+            <CardHeader>
+              <CardTitle>My Assessments</CardTitle>
+              <CardDescription>
+                Complete your assigned assessments
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+
+              {assessments.length === 0 && (
+                <p className="text-center text-muted-foreground">
+                  No assessments assigned yet
+                </p>
+              )}
+
+              {assessments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex justify-between p-4 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{a.title}</p>
+
+                    <p className="text-sm">
+                      {a.status === "PENDING" && (
+                        <span className="text-yellow-600">Pending</span>
+                      )}
+
+                      {a.status === "IN_PROGRESS" && (
+                        <span className="text-blue-600">In Progress</span>
+                      )}
+
+                      {a.status === "COMPLETED" && (
+                        <span className="text-green-600">
+                          Completed ({a.score ?? 0}%)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    variant={a.status === "PENDING" ? "default" : "outline"}
+                    onClick={() => handleAction(a)}
+                  >
+                    {a.status === "PENDING"
+                      ? "Start"
+                      : a.status === "IN_PROGRESS"
+                      ? "Continue"
+                      : "View"}
+                  </Button>
+                </div>
+              ))}
+
+            </CardContent>
+          </Card>
+        )}
+
       </main>
     </div>
   );
