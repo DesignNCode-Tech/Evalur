@@ -1,9 +1,12 @@
 package com.evalur.domain.assessment.entity;
 
+import java.util.List;
+
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.evalur.common.BaseEntity;
+import com.evalur.domain.ai.entity.AiDocument;
 import com.evalur.domain.organization.entity.Organization;
 
 import jakarta.persistence.Column;
@@ -12,6 +15,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -34,6 +38,10 @@ public class Assessment extends BaseEntity {
     @JdbcTypeCode(SqlTypes.JSON) 
     @Column(columnDefinition = "jsonb")
     private String content;
+
+
+    @ManyToMany
+private List<AiDocument> documents;
 
     
 
