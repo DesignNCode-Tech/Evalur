@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.evalur.common.ApiResponse;
 import com.evalur.domain.assessment.dto.AssessmentRequest;
+import com.evalur.domain.assessment.dto.AssessmentSummaryResponse;
 import com.evalur.domain.assessment.entity.Assessment;
 import com.evalur.domain.assessment.repository.AssessmentRepository;
 import com.evalur.domain.assessment.service.AssessmentService;
@@ -52,12 +53,26 @@ public class AssessmentController {
         ));
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<Assessment>>> getMyAssessments() {
+
+
+    @GetMapping("/get-complete-assessments")
+    public ResponseEntity<ApiResponse<List<Assessment>>> getFullMyAssessments() {
         Long orgId = SecurityUtils.getCurrentOrgId(); // Filter by the current manager's organization
         return ResponseEntity.ok(ApiResponse.success(
                 assessmentRepository.findByOrganizationIdOrderByCreatedAtDesc(orgId),
                 "Assessments retrieved."
         ));
+    }
+
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AssessmentSummaryResponse>>> getMyAssessments() {
+        Long orgId = SecurityUtils.getCurrentOrgId();
+        List<AssessmentSummaryResponse> list = assessmentRepository.findByOrganizationIdOrderByCreatedAtDesc(orgId)
+                .stream()
+                .map(a -> new AssessmentSummaryResponse(a.getId(), a.getTitle(), a.getRole(), a.getSeniority(), a.getStatus()))
+                .toList();
+
+        return ResponseEntity.ok(ApiResponse.success(list, "Assessments retrieved."));
     }
 }

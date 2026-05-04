@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import com.evalur.common.BaseEntity;
 import com.evalur.domain.organization.entity.Organization;
-import com.fasterxml.jackson.annotation.JsonIgnore; 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,7 +35,7 @@ import lombok.Setter;
 public class User extends BaseEntity implements UserDetails {
 
     @Column(nullable = false)
-    private String name; 
+    private String name;
 
     @Column(unique = true, nullable = false)
     private String email;
@@ -50,17 +50,16 @@ public class User extends BaseEntity implements UserDetails {
 
     // Required for targeting Assessment difficulty via LLM
     @Column(name = "seniority_level")
-    private String seniorityLevel; 
+    private String seniorityLevel;
 
     // Bounded to an Organization. Nullable allows Evalur Platform Admins to exist.
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organization_id", nullable = true) 
+    @JoinColumn(name = "organization_id", nullable = true)
     private Organization organization;
 
     // ==========================================================
     // Helper Methods for the B2B Multi-Tenant RBAC
     // ==========================================================
-    
     public boolean isPlatformAdmin() {
         return this.role == Role.ADMIN && this.organization == null;
     }
@@ -77,12 +76,10 @@ public class User extends BaseEntity implements UserDetails {
     // ==========================================================
     // UserDetails Interface Methods (Spring Security)
     // ==========================================================
-
     @JsonIgnore // Hide authorities from standard JSON responses
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Returns the ROLE string for SecurityConfig and JWT parsing checks
-        return List.of(new SimpleGrantedAuthority(role.getAuthority()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override
@@ -91,14 +88,22 @@ public class User extends BaseEntity implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() { return true; }
+    public boolean isAccountNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() {
+        return true;
+    }
 
     @Override
-    public boolean isCredentialsNonExpired() { return true; }
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() {
+        return true;
+    }
 }
