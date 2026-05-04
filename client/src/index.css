@@ -1,10 +1,37 @@
+/* ✅ ALL IMPORTS FIRST */
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+/* ✅ THEN TAILWIND */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ✅ THEN YOUR CUSTOM CSS */
+:root{
+  --bs-blue: #0d6efd;
+  --bs-indigo: #6610f2;
+  --bs-purple: #6f42c1;
+  --bs-pink: #d63384;
+  --bs-red: #dc3545;
+  --bs-orange: #fd7e14;
+  --bs-yellow: #ffc107;
+  --bs-green: #198754;
+  --bs-teal: #20c997;
+  --bs-cyan: #0dcaf0;
+  --bs-black: #000;
+  --bs-white: #fff;
+}
+
+/* KEEP YOUR EXISTING LAYERS BELOW */
+
+@layer base {
+  body {
+    @apply dark:bg-gray-950 dark:text-gray-100;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
 
 @layer base {
   :root {
