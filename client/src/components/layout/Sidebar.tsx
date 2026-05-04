@@ -41,29 +41,26 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   // Dynamic menu based on role
   const getMenuItems = () => {
     if (isAdmin) {
-      // ADMIN Menu - Full Access
       return [
-        { name: "Overview", icon: LayoutDashboard, url: "/dashboard", badge: "" },
-        { name: "Ingest Knowledge", icon: Database, url: "/knowledge", badge: "" },
-        { name: "Create Assessment", icon: ClipboardList, url: "/assessments", badge: "" },
-        { name: "Candidates", icon: Users, url: "/candidates", badge: "" },
-        { name: "Settings", icon: Settings, url: "/settings", badge: "" },
+        { name: "OverviewPage", icon: LayoutDashboard, url: "/admin/overview", badge: "" },
+        { name: "Ingest Knowledge", icon: Database, url: "/admin/knowledge", badge: "" },
+        { name: "Create Assessment", icon: ClipboardList, url: "/admin/assessments", badge: "" },
+        { name: "Candidates", icon: Users, url: "/admin/candidates", badge: "" },
+        { name: "Settings", icon: Settings, url: "/admin/settings", badge: "" },
       ]
     } else if (isManager) {
-      // MANAGER Menu - Limited Access
       return [
-        { name: "Overview", icon: LayoutDashboard, url: "/dashboard", badge: "" },
-        { name: "Assigned Assessments", icon: ClipboardList, url: "/assigned-assessments", badge: "3" },
-        { name: "My Candidates", icon: Users, url: "/my-candidates", badge: "" },
-        { name: "Team Performance", icon: BarChart3, url: "/team-performance", badge: "" },
-      ]
-    } else {
-      // STAFF/CANDIDATE Menu - Very Limited Access
-      return [
-        { name: "My Assessments", icon: ClipboardList, url: "/my-assessments", badge: "" },
-        { name: "Profile", icon: Users, url: "/profile", badge: "" },
+        { name: "Overview", icon: LayoutDashboard, url: "/manager", badge: "" },
+        { name: "Assigned Assessments", icon: ClipboardList, url: "/manager/assessments", badge: "3" },
+        { name: "My Candidates", icon: Users, url: "/manager/candidates", badge: "" },
+        { name: "Team Performance", icon: BarChart3, url: "/manager/performance", badge: "" },
       ]
     }
+
+    return [
+      { name: "My Assessments", icon: ClipboardList, url: "/candidate", badge: "" },
+      { name: "Profile", icon: Users, url: "/candidate/profile", badge: "" },
+    ]
   }
 
   const menuItems = getMenuItems()

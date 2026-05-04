@@ -5,7 +5,13 @@ import { AuthLayout, MainLayout, SecureLayout } from '../layout/Layouts';
 import { LoginPage, RegisterPage } from '../../feature/auth';
 import { HomePage } from '../../feature/home';
 import DashboardPage from '@/feature/dashboard/pages/DashboardPage';
+import OverviewPage from '@/feature/dashboard/pages/AdminPages/OverviewPage'
+import KnowledgePage from '@/feature/dashboard/pages/AdminPages/KnowledgePage';
+import AssessmentPage from '@/feature/dashboard/pages/AdminPages/AssessmentPage';
+import CandidatesPage from '@/feature/dashboard/pages/AdminPages/CandidatesPage';
+import SettingsPage from '@/feature/dashboard/pages/AdminPages/SettingsPage';
 import UnauthorizedPage from '@/common/pages/UnauthorizedPage';
+import RoleRedirect from './RoleRedirect';
 
 export const AppRouter = () => {
   return (
@@ -17,36 +23,68 @@ export const AppRouter = () => {
           <Route path='/' element={<HomePage />} />
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/auth/register" element={<RegisterPage />} />
+           <Route path="/auth/register/join" element={<RegisterPage />} />
         </Route>
       </Route>
 
-      {/* PROTECTED ROUTES (Only accessible IF logged in) */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<MainLayout />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-        </Route>
+     {/* AFTER LOGIN → REDIRECT BASED ON ROLE */}
+      <Route path="/dashboard" element={<RoleRedirect />} />
 
-        {/* Locked Down Exam Navigation */}
-        <Route element={<SecureLayout />}>
-          {/* //add secure routes here */}
-        </Route>
-      </Route>
-
-      {/*  ROLE PROTECTED ROUTE */}
-      {/* Admin only route */}
+      {/* ADMIN */}
       <Route element={<ProtectedRoute allowedRoles={["ADMIN"]} />}>
-       {/* This route is now protected and only accessible to ADMIN role */}
+        <Route element={<MainLayout />}>
+          <Route path="/admin" element={<DashboardPage />} />
+          <Route path="/admin/overview" element={<OverviewPage />} />
+          <Route path="/admin/knowledge" element={<KnowledgePage />} />
+          <Route path="/admin/assessments" element={<AssessmentPage />} />
+          <Route path="/admin/candidates" element={<CandidatesPage />} />
+          <Route path="/admin/settings" element={<SettingsPage />} />
+
+        </Route>
       </Route>
 
-      {/* INVITE ROUTE (FIXED AS PER REVIEW) */}
-      <Route element={<ProtectedRoute allowedRoles={["ADMIN", "MANAGER"]} />}>
-       {/* This route is now protected and only accessible to ADMIN and MANAGER roles */}
+      {/* MANAGER */}
+      <Route element={<ProtectedRoute allowedRoles={["MANAGER"]} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/manager" element={<DashboardPage />} />
+        </Route>
+      </Route>
+
+      {/* STAFF */}
+      <Route element={<ProtectedRoute allowedRoles={["STAFF"]} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/staff" element={<DashboardPage />} />
+        </Route>
+      </Route>
+
+      {/* CANDIDATE */}
+      <Route element={<ProtectedRoute allowedRoles={["CANDIDATE"]} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/candidate" element={<DashboardPage />} />
+        </Route>
+      </Route>
+
+      {/* SECURE ROUTES */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<SecureLayout />}>
+          {/* secure routes */}
+        </Route>
       </Route>
 
       {/* CATCH ALL */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
 
+
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+
+
+
+        {/* Locked Down Exam Navigation */}
+        <Route element={<SecureLayout />}>
+          {/* //add secure routes here */}
+        </Route>
     </Routes>
   );
 };
