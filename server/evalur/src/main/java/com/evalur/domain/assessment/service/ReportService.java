@@ -8,9 +8,10 @@ import org.springframework.stereotype.Service;
 
 import com.evalur.domain.assessment.entity.AssessmentEvaluation;
 import com.evalur.domain.assessment.repository.AssessmentEvaluationRepository;
-import com.fasterxml.jackson.databind.ObjectMapper; // Import for parsing DNA
+import com.evalur.domain.user.repository.UserRepository; // Add this import
+import com.evalur.domain.user.entity.User; // Add this import
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-// iText 7 Imports
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
@@ -25,7 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class ReportService {
 
     private final AssessmentEvaluationRepository evaluationRepository;
-    private final ObjectMapper objectMapper; // Use the bean we configured earlier
+    private final UserRepository userRepository; // 1. Inject the UserRepository
+    private final ObjectMapper objectMapper;
 
     public byte[] generateAssessmentPdf(Long evaluationId) throws IOException {
         AssessmentEvaluation eval = evaluationRepository.findById(evaluationId)
@@ -36,42 +38,37 @@ public class ReportService {
         PdfDocument pdf = new PdfDocument(writer);
         Document document = new Document(pdf);
 
-        // 1. Header & Candidate Info
-        document.add(new Paragraph("Evalur Technical Assessment Report")
-                .setBold()
-                .setFontSize(22));
+        // 2. Fetch the User entity using the userId from UserAssessment
+        User candidate = userRepository.findById(eval.getUserAssessment().getUserId())
+                .orElse(null);
+        String candidateName = (candidate != null) ? candidate.getName() : "Unknown Candidate";
+
+        // Header
+        document.add(new Paragraph("Evalur Technical Assessment Report").setBold().setFontSize(22));
         
-        // Attempt to get user name from the relationship
-        String candidateName = eval.getUserAssessment().getUser() != null ? 
-                               eval.getUserAssessment().getUser().getName() : "Candidate ID: " + eval.getUserAssessment().getUserId();
-        
+        // Candidate Info
         document.add(new Paragraph("Candidate: " + candidateName));
         document.add(new Paragraph("Assessment: " + eval.getUserAssessment().getAssessment().getTitle()));
-        document.add(new Paragraph("Objective Score: " + eval.getObjectiveScore() + "%")
-                .setFontSize(16)
-                .setBold());
+        document.add(new Paragraph("Objective Score: " + eval.getObjectiveScore() + "%").setBold());
         
         document.add(new LineSeparator(new SolidLine()));
 
-        // 2. Logic DNA Section (The Missing Part)
-        if (eval.getLogicDna() != null && !eval.getLogicDna().isEmpty()) {
-            document.add(new Paragraph("\nLOGIC DNA TRAJECTORY").setBold().setFontSize(14));
+        // Logic DNA Section
+        if (eval.getLogicDna() != null) {
+            document.add(new Paragraph("\nLOGIC DNA TRAJECTORY").setBold());
             try {
-                // Parse the JSON string {"Efficiency":8, "Security":6...} into a Map
                 Map<String, Integer> metrics = objectMapper.readValue(eval.getLogicDna(), Map.class);
-                
                 metrics.forEach((trait, score) -> {
                     document.add(new Paragraph(trait + ": " + score + " / 10"));
                 });
             } catch (Exception e) {
-                document.add(new Paragraph("Note: Logic metrics format is being processed."));
+                document.add(new Paragraph("DNA metrics data is currently being processed."));
             }
         }
 
-        // 3. AI Feedback Section
-        document.add(new Paragraph("\nAI LOGIC CONSULTANT FEEDBACK").setBold().setFontSize(14));
-        document.add(new Paragraph(eval.getAiLogicFeedback() != null ? 
-                eval.getAiLogicFeedback() : "Analysis in progress..."));
+        // AI Feedback Section
+        document.add(new Paragraph("\nAI LOGIC CONSULTANT FEEDBACK").setBold());
+        document.add(new Paragraph(eval.getAiLogicFeedback()));
 
         document.close();
         return out.toByteArray();
