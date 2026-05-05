@@ -11,8 +11,8 @@ import AssessmentPage from '@/feature/dashboard/pages/AdminPages/AssessmentPage'
 import CandidatesPage from '@/feature/dashboard/pages/AdminPages/CandidatesPage';
 import SettingsPage from '@/feature/dashboard/pages/AdminPages/SettingsPage';
 
-// import AssessmentPlayer from '@/feature/dashboard/pages/candidatePages/AssessmentPlayer';
-// import AssessmentResult from '@/feature/dashboard/pages/candidatePages/AssessmentResult';
+import AssessmentPlayer from '@/feature/dashboard/pages/candidatePages/AssessmentPlayer';
+import AssessmentResult from '@/feature/dashboard/pages/candidatePages/AssessmentResult';
 
 import UnauthorizedPage from '@/common/pages/UnauthorizedPage';
 import RoleRedirect from './RoleRedirect';
@@ -47,7 +47,6 @@ export const AppRouter = () => {
           <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/assessments/view/:id" element={<ViewAssessmentPage />} />
           <Route path="/admin/assessments/view/:id/result" element={<AssessmentResultPage />} /> 
-
         </Route>
       </Route>
 
@@ -65,36 +64,25 @@ export const AppRouter = () => {
         </Route>
       </Route>
 
-      {/* CANDIDATE */}
+      {/* CANDIDATE (Standard Layout) */}
       <Route element={<ProtectedRoute allowedRoles={["CANDIDATE"]} />}>
         <Route element={<MainLayout />}>
           <Route path="/candidate" element={<DashboardPage />} />
-          {/* <Route path="/assessment/:id" element={< AssessmentPlayer/>} />
-          <Route path="/assessment/result/:id" element={<AssessmentResult />} /> */}
+          <Route path="/assessment/result/:id" element={<AssessmentResult />} />
         </Route>
       </Route>
 
-      {/* SECURE ROUTES */}
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute allowedRoles={["CANDIDATE"]} />}>
         <Route element={<SecureLayout />}>
-          {/* secure routes */}
+          {/* PLAYER MOVED HERE: Strips away sidebars/navbars for the test */}
+          <Route path="/assessment/:id" element={<AssessmentPlayer />} />
         </Route>
       </Route>
 
-      {/* CATCH ALL */}
+      {/* CATCH ALL / UNAUTHORIZED */}
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
 
-
-      {/* FALLBACK */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-
-
-
-        {/* Locked Down Exam Navigation */}
-        <Route element={<SecureLayout />}>
-          {/* //add secure routes here */}
-        </Route>
     </Routes>
   );
 };

@@ -7,6 +7,7 @@ import type {
   SubmissionRequest // ❗ Added this import
 } from "@/feature/dashboard/api/assessmentApi"; 
 
+import { candidateApi } from "../api/candidateApi";
 /** 
  * QUERIES (Data Syncing)
  */
@@ -127,16 +128,54 @@ export const useUploadDocument = () => {
   });
 };
 
-// 9. Submit candidate answers for evaluation (❗ Uncommented and Fixed)
+// // 9. Submit candidate answers for evaluation (❗ Uncommented and Fixed)
+// export const useSubmitAssessment = () => {
+//   return useMutation({
+//     // ❗ FIX: Mapped to the specific SubmissionRequest type from your API file
+//     mutationFn: (payload: SubmissionRequest) => assessmentService.submitAssessment(payload),
+//     onSuccess: () => {
+//       toast.success("Assessment submitted successfully! Evaluating logic...");
+//     },
+//     onError: () => {
+//       toast.error("Submission failed. Check your connection.");
+//     },
+//   });
+// };
+
+
+// ==========================================
+// CANDIDATE HOOKS
+// ==========================================
+
+export const useMyAssessments = () => {
+  return useQuery({
+    queryKey: ["my-assessments"],
+    queryFn: candidateApi.getMyAssessments,
+  });
+};
+
+export const useStartAssessment = (assignmentId: number) => {
+  return useQuery({
+    queryKey: ["assessment-player", assignmentId],
+    queryFn: () => candidateApi.startAssessment(assignmentId),
+    enabled: !!assignmentId, // Only run if we have an ID
+    refetchOnWindowFocus: false, // CRITICAL: Prevents test reloading if they switch tabs
+    staleTime: Infinity, // Keeps the test in memory so they don't lose progress
+  });
+};
+
 export const useSubmitAssessment = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
-    // ❗ FIX: Mapped to the specific SubmissionRequest type from your API file
-    mutationFn: (payload: SubmissionRequest) => assessmentService.submitAssessment(payload),
+    mutationFn: candidateApi.submitAssessment,
     onSuccess: () => {
-      toast.success("Assessment submitted successfully! Evaluating logic...");
+      toast.success("Assessment submitted successfully!");
+      // Refresh the dashboard so the test shows as "Under Review"
+      queryClient.invalidateQueries({ queryKey: ["my-assessments"] }); 
     },
-    onError: () => {
-      toast.error("Submission failed. Check your connection.");
-    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to submit assessment. Please try again.");
+    }
   });
 };

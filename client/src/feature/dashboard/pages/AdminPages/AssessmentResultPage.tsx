@@ -5,24 +5,29 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LogicRadarChart } from "@/components/ui/LogicRadarChart";
 import { useAssessmentResult } from "@/feature/dashboard/hooks/useAssessment";
-// import { downloadAssessmentReport } from "../../api/reportService"; // Uncomment when ready
-
+import { downloadAssessmentReport } from "@/feature/dashboard/api/reportService"; 
 export default function AssessmentResultPage() {
   const { id } = useParams();
 
   // 1. Fetch data using your React Query hook
   const { data: result, isLoading, error } = useAssessmentResult(id as string);
 
-  // 2. Handle PDF Download
+// 2. Handle PDF Download
   const handleDownload = async () => {
-    /* Temporarily disabled until PDF API is verified
-    toast.promise(downloadAssessmentReport(result.id), {
+    // Grab the actual evaluation ID from the unwrapped data
+    const evaluationId = result?.evaluation?.id || result?.id; // Fallback to result.id if evaluationId is not directly available
+
+    if (!evaluationId) {
+      toast.error("Evaluation ID missing. Cannot generate report.");
+      return;
+    }
+
+    // Automatically handles the loading spinner, success message, and error catching!
+    toast.promise(downloadAssessmentReport(evaluationId), {
       loading: "Generating your technical report...",
       success: "Report downloaded successfully!",
       error: "Could not generate PDF. Please try again.",
     });
-    */
-    toast.info("Download clicked (PDF feature currently paused)");
   };
 
   // 3. Loading State
@@ -88,12 +93,19 @@ export default function AssessmentResultPage() {
         </Card>
 
         {/* Metric 2: Logic DNA Radar Chart */}
-        <Card className="md:col-span-2 overflow-hidden flex items-center justify-center p-4 border-slate-200 shadow-sm min-h-[300px]">
-           {parsedDna ? (
-             <LogicRadarChart dnaString={result.logicDna} parsedData={parsedDna} />
-           ) : (
-             <p className="text-slate-400 italic text-sm">No valid Logic DNA available to chart.</p>
-           )}
+       <Card className="md:col-span-2 overflow-hidden flex flex-col p-6 border-slate-200 shadow-sm min-h-[350px]">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-center mb-2">
+            Logic DNA Profile
+          </span>
+          <div className="flex-1 w-full h-full min-h-[250px]">
+            {parsedDna ? (
+              <LogicRadarChart dnaString={result.logicDna} parsedData={parsedDna} />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-slate-400 italic text-sm">No valid Logic DNA available to chart.</p>
+              </div>
+            )}
+          </div>
         </Card>
       </div>
 

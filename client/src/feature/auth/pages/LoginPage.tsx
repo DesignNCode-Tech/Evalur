@@ -37,18 +37,18 @@ const onSubmit = (data: LoginFormData) => {
 };
 
   return (
-    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50 text-slate-900 font-sans">
+    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 bg-transparent-200 bg-gradient-radial text-slate-800 font-sans rounded-2xl overflow-hidden shadow-lg">
       
       {/* BRANDING SIDE - Matching the Register Page style */}
-      <div className="hidden md:flex flex-col justify-center px-16 bg-slate-900 text-white">
-        <h1 className="text-5xl font-bold mb-6 tracking-tight">Evalur</h1>
+      <div className="hidden md:flex flex-col justify-center px-16 bg- text-white ">
+        <span className="text-5xl font-bold mb-6 tracking-tight">Evalur</span>
         <p className="text-slate-400 text-xl max-w-lg leading-relaxed">
           Access your adaptive skill verification environment and manage organizational hiring context.
         </p>
       </div>
 
       {/* LOGIN FORM SIDE */}
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-8 sh">
         <div className="w-full max-w-md space-y-8 bg-white p-10 rounded-2xl shadow-sm border border-slate-200">
           <div>
             <h2 className="text-3xl font-bold">Welcome Back</h2>
