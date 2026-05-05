@@ -1,6 +1,5 @@
 package com.evalur.domain.ai.service;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -10,12 +9,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.evalur.domain.ai.dto.AiReasoningContext;
+import com.evalur.domain.assessment.entity.EvaluationStatus;
 import com.evalur.domain.assessment.repository.AssessmentEvaluationRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
-import reactor.util.retry.Retry;
 
 @Service
 @Slf4j
@@ -32,8 +31,7 @@ public class AiReasoningService {
             AssessmentEvaluationRepository evaluationRepository,
             @Value("${evalur.ai.google-gemini.api-key}") String apiKey,
             @Value("${evalur.ai.google-gemini.base.url}") String baseUrl,
-            @Value("${evalur.ai.google-gemini.model}") String model
-    ) {
+            @Value("${evalur.ai.google-gemini.model}") String model) {
         this.evaluationRepository = evaluationRepository;
         this.apiKey = apiKey;
         this.model = model;
@@ -53,39 +51,43 @@ public class AiReasoningService {
         Map<String, Object> requestBody = Map.of(
                 "contents", List.of(Map.of(
                         "role", "user",
-                        "parts", List.of(Map.of("text", prompt))
-                )),
+                        "parts", List.of(Map.of("text", prompt)))),
                 "generationConfig", Map.of(
-                        "temperature", 0.1, // Low temperature for consistent technical review
-                        "maxOutputTokens", 300 
-                )
-        );
+                        "temperature", 0.1,
+                        "maxOutputTokens", 2048,
+                        "responseMimeType", "application/json" // FORCE Gemini to return valid JSON
+                ));
 
         try {
             String response = webClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/" + model + ":generateContent")
                             .queryParam("key", apiKey)
-                            .build()
-                    )
+                            .build())
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(45))
-                    .retryWhen(Retry.backoff(2, Duration.ofSeconds(2)))
                     .block();
 
-            String feedback = extractText(response);
+            // 1. Extract the raw text (which is now a JSON string)
+            String rawJson = extractText(response);
 
-            // Update the Sidecar Table (AssessmentEvaluation)
+            // 2. Parse the internal JSON
+            JsonNode rootNode = objectMapper.readTree(rawJson);
+            String qualitativeFeedback = rootNode.path("feedback").asText();
+            String metricsJson = rootNode.path("metrics").toString(); // This is for your Radar Chart
+
+            // 3. Update the Sidecar Table correctly
             evaluationRepository.findById(context.getEvaluationId()).ifPresent(eval -> {
-                eval.setAiLogicFeedback(feedback);
+                eval.setAiLogicFeedback(qualitativeFeedback); // Plain text feedback
+                eval.setLogicDna(metricsJson); // Structured JSON for Radar Chart
+                eval.setEvaluationStatus(EvaluationStatus.COMPLETED);
                 evaluationRepository.save(eval);
-                log.info("AI Reasoning successfully saved for Evaluation: {}", context.getEvaluationId());
+                log.info("AI Logic DNA and Feedback successfully parsed for ID: {}", context.getEvaluationId());
             });
 
         } catch (Exception e) {
-            log.error("AI Reasoning failed for Evaluation {}: {}", context.getEvaluationId(), e.getMessage());
+            log.error("AI Parsing failed: {}", e.getMessage());
         }
     }
 
@@ -94,21 +96,23 @@ public class AiReasoningService {
         return root.path("candidates").get(0).path("content").path("parts").get(0).path("text").asText().trim();
     }
 
+    // Update the prompt in your constructReasoningPrompt method:
     private String constructReasoningPrompt(String code, String rubric) {
         return String.format("""
-            Act as a Senior Technical Lead. Analyze the candidate's logic in the provided code against the 'Organization Standards'.
-            The code has already passed functional tests; focus ONLY on architectural logic, safety, and efficiency.
+                Analyze the candidate's code logic based on the provided standards.
+                Return your response in this EXACT JSON format:
+                {
+                  "feedback": "2-3 sentences of qualitative analysis",
+                  "metrics": {
+                    "Efficiency": 8,
+                    "Security": 6,
+                    "Maintainability": 9,
+                    "Readability": 7
+                  }
+                }
 
-            ORGANIZATION STANDARDS (RAG CONTEXT):
-            %s
-
-            CANDIDATE CODE:
-            %s
-
-            GOAL:
-            Provide a 'Logic Trajectory' feedback in exactly 2-3 concise sentences. 
-            Explain how well they followed the standards or where their logic might fail in a production environment.
-            Do NOT mention syntax or formatting.
-            """, rubric, code);
+                STANDARDS: %s
+                CODE: %s
+                """, rubric, code);
     }
 }

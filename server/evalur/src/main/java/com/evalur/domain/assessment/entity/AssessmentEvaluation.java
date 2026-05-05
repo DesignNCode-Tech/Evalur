@@ -7,7 +7,11 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "assessment_evaluations")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AssessmentEvaluation extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -23,4 +27,7 @@ public class AssessmentEvaluation extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "evaluation_status")
     private EvaluationStatus evaluationStatus = EvaluationStatus.PENDING;
+
+    @Column(name = "logic_dna", columnDefinition = "TEXT")
+    private String logicDna; 
 }
