@@ -17,6 +17,7 @@ import SettingsPage from '@/feature/dashboard/pages/AdminPages/SettingsPage';
 import UnauthorizedPage from '@/common/pages/UnauthorizedPage';
 import RoleRedirect from './RoleRedirect';
 import ViewAssessmentPage from '@/feature/dashboard/pages/AdminPages/ViewAssessmentPage';
+import AssessmentResultPage from '@/feature/dashboard/pages/AdminPages/AssessmentResultPage';
 
 export const AppRouter = () => {
   return (
@@ -45,6 +46,7 @@ export const AppRouter = () => {
           <Route path="/admin/candidates" element={<CandidatesPage />} />
           <Route path="/admin/settings" element={<SettingsPage />} />
           <Route path="/admin/assessments/view/:id" element={<ViewAssessmentPage />} />
+          <Route path="/admin/assessments/view/:id/result" element={<AssessmentResultPage />} /> 
 
         </Route>
       </Route>

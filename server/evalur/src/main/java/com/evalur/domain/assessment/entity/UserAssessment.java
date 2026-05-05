@@ -2,6 +2,7 @@ package com.evalur.domain.assessment.entity;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.CascadeType; // Added
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,6 +13,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne; // Added
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +25,7 @@ import lombok.Setter;
 @Table(name = "user_assessments")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class UserAssessment {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,5 +48,9 @@ public class UserAssessment {
         ASSIGNED, IN_PROGRESS, SUBMITTED
     }
 
-   
+    // ❗ ADDED THIS RELATIONSHIP
+    // This links the assessment session to its final evaluation/score
+    @OneToOne(mappedBy = "userAssessment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private AssessmentEvaluation evaluation; 
+
 }

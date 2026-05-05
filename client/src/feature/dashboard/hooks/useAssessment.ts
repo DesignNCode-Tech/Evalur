@@ -1,8 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import assessmentService from "../api/assessmentApi"; // Ensure this path correctly points to your API file
 import { toast } from "sonner";
-import type {AssessmentRequest, 
-  AssignmentRequest } from "@/feature/dashboard/api/assessmentApi"; // Importing types for request payloads
+import type { 
+  AssessmentRequest, 
+  AssignmentRequest,
+  SubmissionRequest // ❗ Added this import
+} from "@/feature/dashboard/api/assessmentApi"; 
 
 /** 
  * QUERIES (Data Syncing)
@@ -25,7 +28,6 @@ export const useLibraryDocuments = () => {
 };
 
 // 3. Fetch all members and filter specifically for CANDIDATEs
-// useAssessment.ts
 export const useCandidates = () => {
   return useQuery({
     queryKey: ["candidates"],
@@ -34,17 +36,18 @@ export const useCandidates = () => {
       
       // Ensure we have an array before filtering
       const memberArray = Array.isArray(members) ? members : [];
-
       return memberArray.filter((m: any) => m.role === "CANDIDATE");
     },
   });
 };
+
 // 4. Fetch a specific assessment's full details (Questions/Structure)
 export const useAssessment = (id: string | number) => {
   return useQuery({
     queryKey: ["assessment", id],
-    queryFn: () => assessmentService.getAssessment(id),
-    enabled: !!id, // Only run if ID is provided
+    // ❗ FIX: Changed from getAssessment to getAssessmentSession to match API file
+    queryFn: () => assessmentService.getAssessmentSession(id), 
+    enabled: !!id, 
   });
 };
 
@@ -53,6 +56,21 @@ export const useAssessmentResult = (id: string | number) => {
   return useQuery({
     queryKey: ["assessment-result", id],
     queryFn: () => assessmentService.getAssessmentResult(id),
+    enabled: !!id,
+  });
+};
+
+export const useCompleteAssessment = (id: string) => {
+  return useQuery({
+    queryKey: ["complete-assessment", id],
+    queryFn: async () => {
+      const allComplete = await assessmentService.getCompleteAssessments();
+      const found = allComplete.find((a: any) => a.id.toString() === id);
+      if (found && typeof found.content === "string") {
+        found.content = JSON.parse(found.content);
+      }
+      return found;
+    },
     enabled: !!id,
   });
 };
@@ -69,7 +87,6 @@ export const useGenerateAssessment = () => {
     mutationFn: (payload: AssessmentRequest) => assessmentService.generateAssessment(payload),
     onSuccess: () => {
       toast.success("AI Generation pipeline started!");
-      // Automatically refresh the assessment list to show 'GENERATING' status
       queryClient.invalidateQueries({ queryKey: ["assessments"] });
     },
     onError: () => {
@@ -86,8 +103,7 @@ export const useAssignAssessment = () => {
     mutationFn: (payload: AssignmentRequest) => assessmentService.assignAssessment(payload),
     onSuccess: () => {
       toast.success("Assessment assigned successfully");
-      // Refresh list to update candidate counts or status badges
-      queryClient.invalidateQueries({ queryKey: ["assessments"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] }); // ❗ Refetch candidates to show new badges
     },
     onError: () => {
       toast.error("Assignment failed. Check if candidate is already assigned.");
@@ -95,6 +111,7 @@ export const useAssignAssessment = () => {
   });
 };
 
+// 8. Upload Document
 export const useUploadDocument = () => {
   const queryClient = useQueryClient();
 
@@ -110,32 +127,16 @@ export const useUploadDocument = () => {
   });
 };
 
-export const useCompleteAssessment = (id: string) => {
-  return useQuery({
-    queryKey: ["complete-assessment", id],
-    queryFn: async () => {
-      const allComplete = await assessmentService.getCompleteAssessments();
-      // Filter for the specific ID provided in the URL
-      const found = allComplete.find((a: any) => a.id.toString() === id);
-      if (found && typeof found.content === "string") {
-        found.content = JSON.parse(found.content);
-      }
-      return found;
+// 9. Submit candidate answers for evaluation (❗ Uncommented and Fixed)
+export const useSubmitAssessment = () => {
+  return useMutation({
+    // ❗ FIX: Mapped to the specific SubmissionRequest type from your API file
+    mutationFn: (payload: SubmissionRequest) => assessmentService.submitAssessment(payload),
+    onSuccess: () => {
+      toast.success("Assessment submitted successfully! Evaluating logic...");
     },
-    enabled: !!id,
+    onError: () => {
+      toast.error("Submission failed. Check your connection.");
+    },
   });
 };
-
-// // 8. Submit candidate answers for evaluation
-// export const useSubmitAssessment = () => {
-//   return useMutation({
-//     mutationFn: (payload: { assessmentId: string | number; answers: any }) => 
-//       assessmentService.submitAssessment(payload),
-//     onSuccess: () => {
-//       toast.success("Assessment submitted successfully");
-//     },
-//     onError: () => {
-//       toast.error("Submission failed. Check your connection.");
-//     },
-//   });
-// };

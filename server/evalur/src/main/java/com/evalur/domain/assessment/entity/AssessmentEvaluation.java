@@ -30,4 +30,6 @@ public class AssessmentEvaluation extends BaseEntity {
 
     @Column(name = "logic_dna", columnDefinition = "TEXT")
     private String logicDna; 
+
+    
 }
