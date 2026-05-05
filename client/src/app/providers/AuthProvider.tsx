@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useMemo, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AuthContext } from "./AuthContext";
 import type { User } from "./AuthContext";
@@ -7,32 +9,36 @@ import api from "../../api/axios";
 export const AuthProvider = ({ children }: { children?: ReactNode }) => {
   const queryClient = useQueryClient();
   
-  // Use "token" consistently to match your useLogin and ProtectedRoute logic
+  // 1. Pull the token and user data from storage instantly.
   const token = localStorage.getItem("token");
+  
+  const storedUser = useMemo(() => {
+    const data = localStorage.getItem("user");
+    try {
+      return data ? (JSON.parse(data) as User) : undefined;
+    } catch (e) {
+      return undefined;
+    }
+  }, []);
 
-  // This query handles fetching the user on page refresh
+  // 2. Sync with the Spring Boot backend in the background.
   const { data: user, isLoading } = useQuery<User>({
     queryKey: ["authUser"],
     queryFn: async () => {
-      // Fetches the current user context from the backend
-      const response = await api.get("/auth/me"); 
+      // Your existing interceptor handles the Bearer token automatically.
+      const response = await api.get("/auth/me");
       return response.data;
     },
-    enabled: !!token, // Only run if a token exists
+    enabled: !!token,
+    // CRITICAL: This hydrates the state immediately so you stay logged in on refresh.
+    initialData: storedUser, 
     retry: false,
-    staleTime: Infinity, // Keep the user data until logout
+    staleTime: 1000 * 60 * 10, // Consider local data fresh for 10 minutes.
   });
 
-  /**
-   * Updated login to accept both token and user object.
-   * This provides an "Instant Login" experience for Evalur.
-   */
   const login = (newToken: string, userData: User) => {
-    // 1. Persist to storage
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(userData));
-
-    // 2. Manually set the query data so isAuthenticated becomes true immediately
     queryClient.setQueryData(["authUser"], userData);
   };
 
@@ -40,8 +46,11 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     queryClient.setQueryData(["authUser"], null);
-    queryClient.clear(); // Clear all cached organizational data
+    queryClient.clear(); // Clear cached organizational data on logout.
   };
+
+  // Only show the global loading spinner if there's a token but NO local user data found.
+  const showLoading = isLoading && !!token && !storedUser;
 
   return (
     <AuthContext.Provider 
@@ -49,16 +58,18 @@ export const AuthProvider = ({ children }: { children?: ReactNode }) => {
         user, 
         token, 
         isAuthenticated: !!user, 
-        isLoading,
+        isLoading: showLoading,
         login, 
         logout 
       }}
     >
-      {isLoading ? (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-          <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
-            <p className="text-sm font-medium">Loading...</p>
+      {showLoading ? (
+        <div className="min-h-screen flex items-center justify-center bg-slate-900">
+           <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-white"></div>
+            <p className="text-[10px] font-black uppercase text-white tracking-widest opacity-50">
+              Resuming Evalur Session
+            </p>
           </div>
         </div>
       ) : (

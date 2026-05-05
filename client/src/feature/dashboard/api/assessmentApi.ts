@@ -1,5 +1,37 @@
-import api from "@/api/axios"; // Adjust this path to where your axios file is saved
+import api from "@/api/axios";
 
+// --- 1. INTERFACES ---
+
+export interface Assessment {
+  id: number;
+  title: string;
+  role: string;
+  seniority: string;
+  content: string; // JSON string containing MCQs and Coding Tasks
+}
+
+export interface UserAssessment {
+  id: number;
+  userId: number;
+  status: "ASSIGNED" | "STARTED" | "SUBMITTED";
+  evaluationStatus: "PENDING" | "COMPLETED" | "FAILED";
+  objectiveScore: number | null;
+  logicDna: string | null;      // Stringified JSON for Radar Chart
+  aiLogicFeedback: string | null;
+  assessment: Assessment;      // Nested assessment details
+  assignedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface Candidate {
+  id: number;
+  name: string;
+  email: string;
+  userRole: string;
+  seniorityLevel: string;
+  userAssessments: UserAssessment[]; // Handle multiple sessions per candidate
+}
 
 export interface AssessmentRequest {
   title: string;
@@ -14,14 +46,17 @@ export interface AssignmentRequest {
   candidateIds: number[];
 }
 
-// ❗ Interface for submitting answers
 export interface SubmissionRequest {
-  assessmentId: number;
-  answers: any
+  userAssessmentId: number; // Use the specific session ID
+  mcqAnswers: number[];
+  codingSolution: string;
 }
 
+// --- 2. SERVICE METHODS ---
+
 const assessmentService = {
-  // --- EXISTING MANAGER METHODS ---
+  // --- MANAGER: ASSESSMENT TEMPLATE METHODS ---
+  
   getAssessments: async () => {
     const response = await api.get("/assessments");
     return response.data.data;
@@ -32,9 +67,20 @@ const assessmentService = {
     return response.data;
   },
 
-  getLibraryDocuments: async () => {
-    const response = await api.get("/ai/docs");
+  getCompleteAssessments: async () => {
+    const response = await api.get("/assessments/get-complete-assessments");
     return response.data.data;
+  },
+
+  // --- MANAGER: CANDIDATE & ASSIGNMENT METHODS ---
+
+  /** 
+   * Fetches all members with their nested userAssessments array.
+   * This is the core method for your "Candidate Registry" table.
+   */
+  getOrgMembers: async (): Promise<Candidate[]> => {
+    const response = await api.get("/org/members");
+    return response.data.data || response.data;
   },
 
   assignAssessment: async (payload: AssignmentRequest) => {
@@ -42,58 +88,88 @@ const assessmentService = {
     return response.data;
   },
 
-  getCompleteAssessments: async () => {
-    const response = await api.get("/assessments/get-complete-assessments");
+  // --- MANAGER: KNOWLEDGE BASE METHODS ---
+
+  getLibraryDocuments: async () => {
+    const response = await api.get("/ai/docs");
     return response.data.data;
   },
 
-  // // 3. GET KNOWLEDGE BASE DOCS
-  // getLibraryDocuments: async () => {
-  //   const response = await api.get("/ai/docs");
-  //   return response.data.data;
-  // },
-
-  // 4. UPLOAD/INGEST NEW KNOWLEDGE
   uploadDocument: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     
     const response = await api.post("/ai/docs/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
   },
 
+  // --- CANDIDATE: TEST EXECUTION METHODS ---
 
-  
+  /** 
+   * Fetches the specific assessment content (MCQs/Tasks) for a session.
+   * Used when a candidate clicks "Start Test".
+   */
+ 
 
-  // assessmentApi.ts
-getOrgMembers: async () => {
-  const response = await api.get("/org/members");
-  // Reach into the nested data if your Spring Boot uses a wrapper
-  return response.data.data || response.data; 
-},
-
-  // --- ❗ ADD THESE MISSING METHODS ---
-
-  // Fetches full assessment details (questions) for the candidate
-  getAssessment: async (id: string | number) => {
-    const response = await api.get(`/assessments/${id}`);
-    return response.data.data;
-  },
-
-  // Submits the candidate's answers
   submitAssessment: async (payload: SubmissionRequest) => {
     const response = await api.post("/user-assessments/submit", payload);
     return response.data;
   },
 
-  // Fetches the AI-generated result/feedback for a completed test
-  getAssessmentResult: async (userAssessmentId: string | number) => {
+  // --- SHARED: RESULTS & EVALUATION ---
+
+  /** 
+   * Fetches the AI evaluation result, Logic DNA, and Objective score.
+   * Matches Postman: GET /api/v1/user-assessments/{id}/result
+   */
+ // --- SHARED: RESULTS & EVALUATION ---
+ // --- CANDIDATE: TEST EXECUTION METHODS ---
+  getAssessmentSession: async (userAssessmentId: string | number) => {
+    const response = await api.get(`/user-assessments/${userAssessmentId}/start`);
+    
+    // 1. Safely bypass the extra 'userAssessment' wrapper if it exists
+    const payload = response.data?.data?.userAssessment || response.data?.data || response.data;
+    if (!payload) return null;
+
+    // 2. Parse the stringified content so the Tabs show the questions instead of 0
+    if (payload.assessment && typeof payload.assessment.content === 'string') {
+      try {
+        payload.assessment.content = JSON.parse(payload.assessment.content);
+      } catch (e) {
+        console.error("Failed to parse assessment content", e);
+      }
+    }
+    
+    return payload;
+  },
+
+  // --- SHARED: RESULTS & EVALUATION ---
+  getAssessmentResult: async (userAssessmentId: string | number): Promise<any> => {
     const response = await api.get(`/user-assessments/${userAssessmentId}/result`);
-    return response.data.data;
+    
+    // 1. Safely bypass the extra 'userAssessment' wrapper
+    const payload = response.data?.data?.userAssessment || response.data?.data || response.data;
+    if (!payload) return null;
+
+    // 2. Flatten the nested evaluation object so the Result page can read it directly
+    if (payload.evaluation) {
+      payload.objectiveScore = payload.evaluation.objectiveScore;
+      payload.logicDna = payload.evaluation.logicDna;
+      payload.aiLogicFeedback = payload.evaluation.aiLogicFeedback;
+    }
+
+    // 3. Parse the content just in case this page needs to show the questions too
+    if (payload.assessment && typeof payload.assessment.content === 'string') {
+      try {
+        payload.assessment.content = JSON.parse(payload.assessment.content);
+      } catch (e) {
+        console.error("Failed to parse assessment content", e);
+      }
+    }
+
+    return payload;
   }
 };
 

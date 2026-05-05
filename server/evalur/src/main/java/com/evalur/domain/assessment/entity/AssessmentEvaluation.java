@@ -1,6 +1,8 @@
 package com.evalur.domain.assessment.entity;
 
 import com.evalur.common.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -16,6 +18,7 @@ public class AssessmentEvaluation extends BaseEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_assessment_id", nullable = false, unique = true)
+    @JsonIgnore
     private UserAssessment userAssessment;
 
     @Column(name = "objective_score", precision = 5, scale = 2)
@@ -30,4 +33,6 @@ public class AssessmentEvaluation extends BaseEntity {
 
     @Column(name = "logic_dna", columnDefinition = "TEXT")
     private String logicDna; 
+
+    
 }

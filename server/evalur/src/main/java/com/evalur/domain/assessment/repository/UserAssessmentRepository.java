@@ -12,4 +12,6 @@ public interface UserAssessmentRepository extends JpaRepository<UserAssessment, 
     
     // Optional: Check if already assigned
     boolean existsByUserIdAndAssessmentId(Long userId, Long assessmentId);
+
+    List<UserAssessment> findByUserId(Long userId);
 }

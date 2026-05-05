@@ -12,7 +12,7 @@ const AuthLayout = () => {
      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
        
         <SidebarProvider>
-    <div className="flex h-screen w-full items-center justify-center h-screen bg-gray-100">
+    <div className="flex h-screen w-full items-center justify-center h-screen bg-gradient-to-bl from-slate-500 to-gray-900">
      <Outlet />
     </div>
     </SidebarProvider>
