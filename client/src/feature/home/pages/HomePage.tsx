@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom" // Added for redirection logic
 
 interface Feature {
   title: string
@@ -272,6 +273,7 @@ const SandboxVisual: React.FC = () => (
 export const HomePage: React.FC = () => {
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const navigate = useNavigate() // Initialize navigate
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10)
@@ -327,10 +329,16 @@ export const HomePage: React.FC = () => {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <button className="rounded-lg px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900">
+            <button 
+              onClick={() => navigate("/auth/login")}
+              className="rounded-lg px-4 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
               Sign in
             </button>
-            <button className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90">
+            <button 
+              onClick={() => navigate("/auth/register")}
+              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90"
+            >
               Get started
             </button>
           </div>
@@ -359,10 +367,16 @@ export const HomePage: React.FC = () => {
               </button>
             ))}
             <div className="mt-3 flex gap-2">
-              <button className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-700">
+              <button 
+                onClick={() => navigate("/auth/login")}
+                className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-700"
+              >
                 Sign in
               </button>
-              <button className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white">
+              <button 
+                onClick={() => navigate("/auth/register")}
+                className="flex-1 rounded-lg bg-indigo-600 py-2.5 text-sm font-medium text-white"
+              >
                 Get started
               </button>
             </div>
@@ -370,9 +384,40 @@ export const HomePage: React.FC = () => {
         )}
       </header>
 
-      
+      {/* ── NEW Top Hero Section ── */}
+      <section className="bg-white pt-20 pb-12 overflow-hidden border-b border-gray-50">
+        <div className="mx-auto max-w-4xl px-5 text-center">
+          <div className="animate-fade-up" style={{ animationDelay: "0s" }}>
+            <EyebrowBadge className="mb-8">Announcing Evalur 2.0</EyebrowBadge>
+          </div>
+          <h1 
+            className="font-display text-6xl md:text-8xl mb-8 tracking-tighter text-gray-900 animate-fade-up"
+            style={{ animationDelay: "0.1s" }}
+          >
+            The future of <span className="text-indigo-600">engineering readiness.</span>
+          </h1>
+          <p 
+            className="text-xl md:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-up font-body"
+            style={{ animationDelay: "0.2s" }}
+          >
+            Skip the generic LeetCode puzzles. Evalur builds adaptive skill verification environments based on your actual codebase.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+            <button 
+              onClick={() => navigate("/auth/register")}
+              className="bg-indigo-600 text-white px-10 py-5 rounded-2xl text-lg font-bold shadow-2xl shadow-indigo-200 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 group"
+            >
+              Get Started for Free
+              <IconArrow className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <button className="bg-white text-gray-700 border-2 border-gray-200 px-10 py-5 rounded-2xl text-lg font-bold hover:bg-gray-50 transition-all">
+              Watch Demo
+            </button>
+          </div>
+        </div>
+      </section>
 
-      {/* ── Hero ── */}
+      {/* ── Original Hero ── */}
       <section className="min-h-[calc(100vh-64px)] border-b border-gray-100">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-0 lg:grid-cols-2 lg:divide-x lg:divide-gray-100">
 
@@ -404,7 +449,10 @@ export const HomePage: React.FC = () => {
               className="animate-fade-up flex flex-wrap gap-3"
               style={{ animationDelay: "0.22s" } as React.CSSProperties}
             >
-              <button className="flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90">
+              <button 
+                onClick={() => navigate("/auth/register")}
+                className="flex items-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-[15px] font-medium text-white transition-opacity hover:opacity-90"
+              >
                 Start free trial
                 <IconArrow className="h-4 w-4" />
               </button>
