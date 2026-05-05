@@ -17,7 +17,7 @@ export interface AssignmentRequest {
 // ❗ Interface for submitting answers
 export interface SubmissionRequest {
   assessmentId: number;
-  answers: any; // Update with your specific MCQ/Code answer structure
+  answers: any
 }
 
 const assessmentService = {
@@ -91,8 +91,8 @@ getOrgMembers: async () => {
   },
 
   // Fetches the AI-generated result/feedback for a completed test
-  getAssessmentResult: async (id: string | number) => {
-    const response = await api.get(`/user-assessments/results/${id}`);
+  getAssessmentResult: async (userAssessmentId: string | number) => {
+    const response = await api.get(`/user-assessments/${userAssessmentId}/result`);
     return response.data.data;
   }
 };

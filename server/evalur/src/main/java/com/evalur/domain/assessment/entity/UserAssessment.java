@@ -44,4 +44,6 @@ public class UserAssessment {
     public enum AssignmentStatus {
         ASSIGNED, IN_PROGRESS, SUBMITTED
     }
+
+   
 }

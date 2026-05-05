@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.evalur.domain.assessment.dto.AssessmentAssignmentRequest;
 import com.evalur.domain.assessment.dto.CandidateAssessmentResponse;
+import com.evalur.domain.assessment.dto.UserSubmissionDTO;
 import com.evalur.domain.assessment.entity.Assessment;
 import com.evalur.domain.assessment.entity.UserAssessment;
 import com.evalur.domain.assessment.repository.AssessmentRepository;
@@ -69,4 +70,21 @@ public class UserAssessmentService {
         // Return the actual JSON content for the candidate to see the questions
         return ua.getAssessment().getContent();
     }
+
+   @Transactional
+    public void submitAssessment(UserSubmissionDTO dto) {
+        UserAssessment ua = userAssessmentRepository.findById(dto.getUserAssessmentId())
+                .orElseThrow(() -> new RuntimeException("Assessment session not found"));
+
+        // Use 'setStatus' to match your existing field name 'status'
+        // Access the inner enum via UserAssessment.AssignmentStatus
+        ua.setStatus(UserAssessment.AssignmentStatus.SUBMITTED);
+        ua.setCompletedAt(LocalDateTime.now());
+
+        userAssessmentRepository.save(ua);
+    }
+    
+
+    
 }
+
