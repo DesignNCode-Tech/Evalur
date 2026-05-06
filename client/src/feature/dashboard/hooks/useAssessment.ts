@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import type { 
   AssessmentRequest, 
   AssignmentRequest,
-  SubmissionRequest // ❗ Added this import
+  SubmissionRequest //  Added this import
 } from "@/feature/dashboard/api/assessmentApi"; 
 
 import { candidateApi } from "../api/candidateApi";
@@ -46,7 +46,7 @@ export const useCandidates = () => {
 export const useAssessment = (id: string | number) => {
   return useQuery({
     queryKey: ["assessment", id],
-    // ❗ FIX: Changed from getAssessment to getAssessmentSession to match API file
+    //  FIX: Changed from getAssessment to getAssessmentSession to match API file
     queryFn: () => assessmentService.getAssessmentSession(id), 
     enabled: !!id, 
   });
@@ -104,7 +104,7 @@ export const useAssignAssessment = () => {
     mutationFn: (payload: AssignmentRequest) => assessmentService.assignAssessment(payload),
     onSuccess: () => {
       toast.success("Assessment assigned successfully");
-      queryClient.invalidateQueries({ queryKey: ["candidates"] }); // ❗ Refetch candidates to show new badges
+      queryClient.invalidateQueries({ queryKey: ["candidates"] }); //  Refetch candidates to show new badges
     },
     onError: () => {
       toast.error("Assignment failed. Check if candidate is already assigned.");
@@ -128,10 +128,10 @@ export const useUploadDocument = () => {
   });
 };
 
-// // 9. Submit candidate answers for evaluation (❗ Uncommented and Fixed)
+// // 9. Submit candidate answers for evaluation ( Uncommented and Fixed)
 // export const useSubmitAssessment = () => {
 //   return useMutation({
-//     // ❗ FIX: Mapped to the specific SubmissionRequest type from your API file
+//     //  FIX: Mapped to the specific SubmissionRequest type from your API file
 //     mutationFn: (payload: SubmissionRequest) => assessmentService.submitAssessment(payload),
 //     onSuccess: () => {
 //       toast.success("Assessment submitted successfully! Evaluating logic...");

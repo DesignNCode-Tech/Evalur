@@ -12,12 +12,12 @@ const ProtectedRoute = ({ allowedRoles }: { allowedRoles?: string[] }) => {
     );
   }
 
-  // ❗ Not logged in → go to login
+  //  Not logged in → go to login
   if (!user) {
     return <Navigate to="/auth/login" replace />;
   }
 
-  // ❗ Role restriction
+  //  Role restriction
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }

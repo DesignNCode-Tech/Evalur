@@ -23,9 +23,13 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "user_assessments")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserAssessment {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -48,9 +52,9 @@ public class UserAssessment {
         ASSIGNED, IN_PROGRESS, SUBMITTED
     }
 
-    // ❗ ADDED THIS RELATIONSHIP
+    // ADDED THIS RELATIONSHIP
     // This links the assessment session to its final evaluation/score
     @OneToOne(mappedBy = "userAssessment", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private AssessmentEvaluation evaluation; 
+    private AssessmentEvaluation evaluation;
 
 }

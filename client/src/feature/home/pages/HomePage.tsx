@@ -418,7 +418,7 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* ── Original Hero ── */}
-      <section className="min-h-[calc(100vh-64px)] border-b border-gray-100">
+      <section className="h-full mt-[800px] border-b border-gray-100">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-0 lg:grid-cols-2 lg:divide-x lg:divide-gray-100">
 
           {/* Left */}

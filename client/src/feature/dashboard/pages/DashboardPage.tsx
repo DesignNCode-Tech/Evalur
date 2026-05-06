@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/app/providers/AuthContext";
-import { useMyAssessments } from "@/feature/dashboard/hooks/useAssessment"; // ✅ Imported our new hook!
+import { useMyAssessments } from "@/feature/dashboard/hooks/useAssessment"; //  Imported our new hook!
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ export default function DashboardPage() {
 
   const role = user?.role?.toUpperCase() as UserRole | undefined;
 
-  // ✅ 1. Use React Query to fetch the candidate's tasks
+  //  1. Use React Query to fetch the candidate's tasks
   const { 
     data: assessments = [], 
     isLoading, 
@@ -41,7 +41,7 @@ export default function DashboardPage() {
   const isStaff = role === "STAFF";
   const isCandidate = role === "CANDIDATE";
 
-  // ✅ 2. Clean Routing Action
+  //  2. Clean Routing Action
   const handleAction = (a: any) => {
     if (a.status === "PENDING" || a.status === "ASSIGNED") {
       navigate(`/assessment/${a.assignmentId}`);

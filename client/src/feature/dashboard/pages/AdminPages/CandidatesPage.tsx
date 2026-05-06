@@ -108,7 +108,7 @@ export default function CandidatesPage() {
           <Button variant="outline" size="icon" onClick={() => refetch()} className="rounded-xl">
             <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
           </Button>
-          {/* ❗ RESTORED ONCLICK HANDLER HERE */}
+          {/*  RESTORED ONCLICK HANDLER HERE */}
           <Button 
             className="rounded-xl font-bold px-6 bg-slate-900 text-white hover:bg-slate-800"
             onClick={() => setShowInviteDialog(true)}

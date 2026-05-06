@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useStartAssessment, useSubmitAssessment } from "@/feature/dashboard/hooks/useAssessment";
-import Editor from "@monaco-editor/react"; // ✅ Imported Monaco
+import Editor from "@monaco-editor/react"; //  Imported Monaco
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,7 @@ export default function AssessmentPlayer() {
   const [mcqAnswers, setMcqAnswers] = useState<number[]>([]);
   const [codingSolution, setCodingSolution] = useState("");
   
-  // ✅ TIME STATES
+  //  TIME STATES
   const [timeLeft, setTimeLeft] = useState<number | null>(null); // Total Exam Time
   const [questionTimeLeft, setQuestionTimeLeft] = useState<number | null>(null); // Individual Question Time
   const [initialQuestionTime, setInitialQuestionTime] = useState<number>(0); // Constant for % calculation
@@ -30,15 +30,15 @@ export default function AssessmentPlayer() {
   // MEDIA STATE
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [micLevel, setMicLevel] = useState(0); // ✅ Tracks microphone volume
+  const [micLevel, setMicLevel] = useState(0); //  Tracks microphone volume
 
-  // ✅ FIX 4: Track latest state for the auto-submit event listener
+  //  FIX 4: Track latest state for the auto-submit event listener
   const stateRef = useRef({ mcqAnswers, codingSolution, id, hasStarted, currentStep });
   useEffect(() => {
     stateRef.current = { mcqAnswers, codingSolution, id, hasStarted, currentStep };
   }, [mcqAnswers, codingSolution, id, hasStarted, currentStep]);
 
-  // ✅ 1. INITIALIZE TOTAL TIMER (Minutes * 0.65 multiplier)
+  //  1. INITIALIZE TOTAL TIMER (Minutes * 0.65 multiplier)
   useEffect(() => {
     if (assessmentData && timeLeft === null) {
       const mcqs = assessmentData.mcqs || [];
@@ -49,7 +49,7 @@ export default function AssessmentPlayer() {
     }
   }, [assessmentData, timeLeft]);
 
-  // ✅ 2. RESET INDIVIDUAL QUESTION TIMER (When step changes)
+  //  2. RESET INDIVIDUAL QUESTION TIMER (When step changes)
   useEffect(() => {
     if (assessmentData && hasStarted) {
       const mcqs = assessmentData.mcqs || [];
@@ -66,7 +66,7 @@ export default function AssessmentPlayer() {
     }
   }, [currentStep, hasStarted, assessmentData]);
 
-  // ✅ 3. MASTER COUNTDOWN (Ticks both Total and Question timers)
+  // 3. MASTER COUNTDOWN (Ticks both Total and Question timers)
   useEffect(() => {
     if (!hasStarted) return;
 
@@ -93,7 +93,7 @@ export default function AssessmentPlayer() {
     return () => clearInterval(timerId);
   }, [hasStarted]);
 
-  // ✅ 4. AUTO-ADVANCE LOGIC
+  //  4. AUTO-ADVANCE LOGIC
   const handleQuestionTimeout = () => {
     const mcqs = assessmentData?.mcqs || [];
     const codingTasks = assessmentData?.codingTasks || [];
@@ -109,14 +109,14 @@ export default function AssessmentPlayer() {
     }
   };
 
-  // ✅ FIX 2: Attach the video stream ONLY after the video element actually exists on screen
+  //  FIX 2: Attach the video stream ONLY after the video element actually exists on screen
   useEffect(() => {
     if (hasStarted && stream && videoRef.current) {
       videoRef.current.srcObject = stream;
     }
   }, [hasStarted, stream]);
 
-  // ✅ FIX 2.1: Microphone Frequency Analyzer
+  //  FIX 2.1: Microphone Frequency Analyzer
   useEffect(() => {
     if (!stream) return;
     
@@ -149,7 +149,7 @@ export default function AssessmentPlayer() {
     };
   }, [stream]);
 
-  // ✅ CONSOLIDATED AUTO-SUBMIT TRIGGER
+  //  CONSOLIDATED AUTO-SUBMIT TRIGGER
   const triggerAutoSubmit = (reason: string) => {
     const { mcqAnswers: latestMcq, codingSolution: latestCode, id: assessId, hasStarted: active } = stateRef.current;
     
@@ -251,7 +251,7 @@ export default function AssessmentPlayer() {
     });
   };
 
-  // ✅ TIME FORMATTER
+  //  TIME FORMATTER
   const formatTime = (seconds: number | null) => {
     if (seconds === null) return "--:--";
     const mins = Math.floor(seconds / 60);
@@ -259,7 +259,7 @@ export default function AssessmentPlayer() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // ✅ FIX 3: Detect language based on question string
+  //  FIX 3: Detect language based on question string
   const detectLanguage = (text: string) => {
     const lower = text.toLowerCase();
     if (lower.includes("sql") || lower.includes("postgresql")) return "sql";
@@ -320,7 +320,7 @@ export default function AssessmentPlayer() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col select-none relative overflow-hidden">
       
-      {/* ✅ REVERSE PROGRESSION PANIC BAR */}
+      {/*  REVERSE PROGRESSION PANIC BAR */}
       {hasStarted && (
         <div className="absolute top-0 left-0 w-full h-1.5 bg-slate-200 z-[60]">
           <div 
@@ -340,7 +340,7 @@ export default function AssessmentPlayer() {
         </div>
 
         <div className="flex items-center gap-6">
-          {/* ✅ Individual Question Timer Display */}
+          {/*  Individual Question Timer Display */}
           <div className={`flex items-center gap-2 px-3 py-1 rounded-md border font-mono text-xs font-bold transition-all ${questionTimeLeft && questionTimeLeft < 10 ? 'bg-red-100 text-red-700 animate-pulse border-red-300' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>
             <Zap className="w-3 h-3" /> Q-TIME: {formatTime(questionTimeLeft)}
           </div>

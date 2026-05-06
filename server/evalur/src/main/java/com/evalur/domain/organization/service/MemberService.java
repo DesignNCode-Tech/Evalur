@@ -43,7 +43,7 @@ public class MemberService {
                             logicDna = ua.getEvaluation().getLogicDna();
                             aiFeedback = ua.getEvaluation().getAiLogicFeedback();
 
-                            // ❗ FIX: Safely convert the BigDecimal to a Double
+                            // FIX: Safely convert the BigDecimal to a Double
                             if (ua.getEvaluation().getObjectiveScore() != null) {
                                 objScore = ua.getEvaluation().getObjectiveScore().doubleValue();
                             }

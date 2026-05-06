@@ -1,14 +1,14 @@
-/* ✅ ALL IMPORTS FIRST */
+/*  ALL IMPORTS FIRST */
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
-/* ✅ THEN TAILWIND */
+/*  THEN TAILWIND */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ THEN YOUR CUSTOM CSS */
+/*  THEN YOUR CUSTOM CSS */
 :root{
   --bs-blue: #0d6efd;
   --bs-indigo: #6610f2;
