@@ -293,6 +293,8 @@ export default function AssessmentPlayer() {
             <ul className="space-y-4 text-sm text-slate-400">
               <li className="flex gap-3 text-orange-300"><Zap className="w-5 h-5 shrink-0" /> Each question has an individual time limit.</li>
               <li className="flex gap-3"><Lock className="w-5 h-5 text-slate-500 shrink-0" /> Full-screen mode will be enforced.</li>
+              <li className="flex gap-3"><Lock className="w-5 h-5 text-slate-500 shrink-0" /> Grant Access to webcam and microphone.</li>
+
               <li className="flex gap-3"><AlertTriangle className="w-5 h-5 text-red-400 shrink-0" /> <span className="text-red-400 font-semibold">Exiting full-screen, switching tabs, or minimizing the window will instantly auto-submit your test.</span></li>
             </ul>
 
